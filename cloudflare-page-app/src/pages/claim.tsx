@@ -1,165 +1,186 @@
 import FormMain from '../components/FormMain'
 import MenuMain from '../components/MenuMain'
-import FigureTier from '../components/FigureTier'
-import ButtonMain from '../components/ButtonMain'
 import styles from './claim.module.css'
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router'
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
-import { Switch, Case } from 'react-if'
+import {useEffect, useState} from 'react'
+import {useNavigate} from 'react-router'
+import {useConnection, useWallet} from '@solana/wallet-adapter-react'
 
 import {
-  BlockheightBasedTransactionConfirmationStrategy,
-  LAMPORTS_PER_SOL,
-  Transaction
+    LAMPORTS_PER_SOL,
+    Transaction
 } from '@solana/web3.js'
-import { getClaimMarkerAccount } from '../airdrop/merkle-distributor-helpers/pda.ts'
-import { claimMarker } from '../airdrop/merkle-distributor-helpers/wrapper.ts'
-import { useClaim } from '../context/claimContex.tsx'
-import { mint } from '../constants.ts'
+import {
+    buildCloseMerkleTransactionInstruction,
+    buildCreateMerkleTransactionInstruction, buildDepositTransactionInstruction
+} from "../solita/wrappers/merkle_wrapper.ts";
+import {modifyComputeUnits} from "../solita/sol-helpers.ts";
+import {NATIVE_MINT} from "@solana/spl-token";
+import {CryptoHelper} from "../solita/crypto-helpers.ts";
 
 const Claim = () => {
-  const navigate = useNavigate()
-  const [claiming, setClaiming] = useState(false)
-  const claimContext = useClaim()
-  const [error, setError] = useState('')
-  const walletContextState = useWallet()
-  const { connection } = useConnection()
-  const [address, setAddress] = useState('')
-  const [displayedAddress, setDisplayedAddress] = useState('')
-  const [tier, setTier] = useState('')
+    const navigate = useNavigate()
+    const [error, setError] = useState('')
+    const walletContextState = useWallet()
+    const {connection} = useConnection()
+    const [address, _setAddress] = useState('')
+    const [_, setDisplayedAddress] = useState('')
+    const nullifer = CryptoHelper.generateAndPrepareRand(111);
+    const secret = CryptoHelper.generateAndPrepareRand(222);
 
-  useEffect(() => {
-    setDisplayedAddress(`${address.slice(0, 4)}…${address.slice(-4)}`)
-  }, [address])
+    const depth = 20;
 
-  async function disconnect() {
-    console.log('disconnect')
-    if (walletContextState.publicKey && connection) {
-      await walletContextState.disconnect()
-      await navigate('/')
-    } else {
-      setError('Please connect wallet')
+    useEffect(() => {
+        (async () => {
+            if (!walletContextState.connected) {
+                await navigate('/')
+            }
+        })()
+    }, [walletContextState.connected])
+
+
+    async function close_merkle() {
+        try {
+            if (!walletContextState.publicKey) {
+                alert("Connect wallet first")
+                return
+            }
+            console.log("walletContextState.publicKey", walletContextState.publicKey.toBase58())
+            const instruction = buildCloseMerkleTransactionInstruction({
+                signer: walletContextState.publicKey,
+                depth
+            })
+            const tx = new Transaction();
+            tx.add(modifyComputeUnits)
+            tx.add(instruction);
+            const block = await connection.getLatestBlockhash();
+            console.log("connection", connection.rpcEndpoint)
+            tx.recentBlockhash = block.blockhash;
+            tx.lastValidBlockHeight = block.lastValidBlockHeight;
+            tx.feePayer = walletContextState.publicKey;
+            const txDespoitHash = await walletContextState.sendTransaction(tx, connection, {
+                skipPreflight: true,
+                preflightCommitment: "confirmed"
+            });
+            console.log('close_merkle', txDespoitHash)
+        } catch (error: any) {
+            console.error("close_merkle", error)
+        }
     }
-  }
 
-  useEffect(() => {
-    (async () => {
-      if (walletContextState.publicKey && connection) {
-        setAddress(walletContextState.publicKey.toBase58())
-        const claimMarker = await getClaimMarkerAccount(connection, walletContextState.publicKey)
-        // @ts-ignore
-        claimContext.setAmount(claimMarker.pretty().amount / (LAMPORTS_PER_SOL / 1000))
-        claimContext.setClaimed(claimMarker.isClaimed)
-        // @ts-ignore
-        if (claimMarker.pretty().amount / (LAMPORTS_PER_SOL / 1000) >= 500) {
-          setTier('Tier 1')
-          // @ts-ignore
-        } else if (claimMarker.pretty().amount / (LAMPORTS_PER_SOL / 1000) >= 100) {
-          setTier('Tier 2')
-          // @ts-ignore
-        } else {
-          setTier('Tier 3')
+    async function create_merkle() {
+        try {
+            if (!walletContextState.publicKey) {
+                alert("Connect wallet first")
+                return
+            }
+            const instruction = buildCreateMerkleTransactionInstruction({
+                signer: walletContextState.publicKey,
+                depth,
+                depositSize: LAMPORTS_PER_SOL,
+                mint: NATIVE_MINT
+            })
+            const tx = new Transaction();
+            tx.add(modifyComputeUnits)
+            tx.add(instruction);
+            tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+            tx.feePayer = walletContextState.publicKey;
+            const txDespoitHash = await walletContextState.sendTransaction(tx, connection, {skipPreflight: true});
+            console.log('create_merkle', txDespoitHash)
+        } catch (error: any) {
+            console.error("create_merkle", error)
         }
-
-      }
-    })()
-  }, [walletContextState.connected])
-
-
-  async function claim() {
-    try {
-      setClaiming(true)
-      claimContext.setClaimed(true)
-      if (walletContextState.publicKey && connection && walletContextState.signTransaction) {
-        const block = await connection.getLatestBlockhash('confirmed')
-        const instruction = claimMarker(walletContextState.publicKey, mint)
-        const txn = new Transaction()
-        txn.lastValidBlockHeight = block.lastValidBlockHeight
-        txn.feePayer = walletContextState.publicKey
-        txn.recentBlockhash = block.blockhash
-        txn.add(instruction)
-        const signedTxn = await walletContextState.signTransaction(txn)
-        const sig = await walletContextState.sendTransaction(signedTxn, connection)
-        console.log('sig', sig)
-        const strategy: BlockheightBasedTransactionConfirmationStrategy = {
-          signature: sig,
-          blockhash: block.blockhash,
-          lastValidBlockHeight: block.lastValidBlockHeight
-        }
-        const result = await connection.confirmTransaction(strategy, 'confirmed')
-        console.log('result', result)
-        if (result.value.err === null) {
-          claimContext.setClaimed(true)
-          await navigate('/claimed')
-        } else {
-          setError('Transaction failed')
-        }
-      }
-    } catch (error) {
-      console.log('CLAIM error', error)
     }
-    setClaiming(false)
-  }
 
-  return (
-    <>
-      <MenuMain current="claiming" />
-      <FormMain
-        aria-busy={claiming}
-        data-current-item="claiming"
-      >
+    async function deposit_merkle() {
+        if (!walletContextState.publicKey) {
+            alert("Connect wallet first")
+            return
+        }
+        let i = 0;
+        console.log("i = ", i++)
+        const nullifierNode = CryptoHelper.modInput(nullifer.u8Array);
+        console.log("i = ", i++)
+        const secretNode = CryptoHelper.modInput(secret.u8Array);
+        console.log("i = ", i++)
+        const commitmentBytes = CryptoHelper.from_children(
+            nullifierNode,
+            secretNode
+        );
+        console.log("i = ", i++)
+        const instructions = await buildDepositTransactionInstruction({
+            signer: walletContextState.publicKey,
+            input: commitmentBytes,
+            depth,
+            connection
+        })
+        console.log("i = ", i++)
+        const tx = new Transaction();
+        tx.add(modifyComputeUnits)
+        for (const instruction of instructions) {
+            tx.add(instruction);
+        }
+        tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+        tx.feePayer = walletContextState.publicKey;
+        console.log("i = ", i++)
+        const txDespoitHash = await walletContextState.sendTransaction(tx, connection, {skipPreflight: true});
+        console.log('deposit_merkle', txDespoitHash)
+    }
 
-        <Switch>
-          <Case condition={claimContext.amount > 0 && !claimContext.claimed}>
-            <FigureTier className={styles.offset}>{tier}</FigureTier>
-            <p>
-              Congrats! <button
-              type="button"
-              className={`ghost ${styles.button}`}
-              title="Connect another wallet"
+    useEffect(() => {
+        setDisplayedAddress(`${address.slice(0, 4)}…${address.slice(-4)}`)
+    }, [address])
+
+    async function disconnect() {
+        console.log('disconnect')
+        if (walletContextState.publicKey && connection) {
+            await walletContextState.disconnect()
+            await navigate('/')
+        } else {
+            setError('Please connect wallet')
+        }
+    }
+
+    return (
+        <>
+            <MenuMain current="claiming"/>
+            <FormMain
+                aria-busy={true}
+                data-current-item="claiming"
             >
-              <u>{displayedAddress}</u>
-            </button> is eligible to <data value={claimContext.amount} className={styles.amount}>
-              {claimContext.amount} $XENO
-            </data>
-            </p>
-            <ButtonMain onClick={async (e) => {
-              e.preventDefault()
-              await claim()
-            }}>
-              {claiming ? 'Claiming...' : 'Claim now'}
-            </ButtonMain>
-          </Case>
-          <Case condition={claimContext.amount > 0 && claimContext.claimed}>
-            <p>
-              Congrats!
-              <u>{displayedAddress}</u>
-              already claimed <data value={claimContext.amount} className={styles.amount}>
-              {claimContext.amount} $XENO
-            </data>
-            </p>
-          </Case>
-          <Case condition={claimContext.amount == 0}>
-            <p>
-              Sorry!
-              <u>{displayedAddress}</u>
-              is not eligible for $XENO
-            </p>
-          </Case>
-        </Switch>
-        {!!error &&
-          (
-            <output className="error">
-              {error}
-            </output>
-          )
-        }
-      </FormMain>
-      <button type="button" className={`ghost ${styles.button}`} onClick={disconnect}>
-        <u>Connect another wallet</u>
-      </button>
-    </>
-  )
+                {!!error &&
+                    (
+                        <output className="error">
+                            {error}
+                        </output>
+                    )
+                }
+            </FormMain>
+            <button type="button" className={`ghost ${styles.button}`} onClick={disconnect}>
+                <u>Connect another wallet</u>
+            </button>
+
+            <div>
+                <hr/>
+                test area
+                <hr/>
+                <button className={`ghost ${styles.button}`} onClick={close_merkle}>
+                    Close Merkle
+                </button>
+                <br/>
+                <button className={`ghost ${styles.button}`} onClick={create_merkle}>
+                    Create Merkle
+                </button>
+                <br/>
+                <button className={`ghost ${styles.button}`} onClick={deposit_merkle}>
+                    Deposit
+                </button>
+                <br/>
+                <button className={`ghost ${styles.button}`}>
+                    Withdraw
+                </button>
+                <br/>
+            </div>
+        </>
+    )
 }
 export default Claim

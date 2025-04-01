@@ -1,0 +1,85 @@
+[workspace]
+resolver = "2"
+members = [
+  "programs/*"
+]
+[workspace.package]
+version = "0.0.1"
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1
+[profile.release.build-override]
+opt-level = 3
+incremental = false
+codegen-units = 1
+
+[patch.crates-io]
+## aes-gcm-siv 0.10.3 and curve25519-dalek 3.x pin zeroize to <1.4
+## which conflicts with other dependencies requiring zeroize ^1.5.
+## We’re patching both crates to unpin zeroize.
+##
+## For aes-gcm-siv we’re using the same revision Solana uses in
+## an (as of now) unreleased commit, see
+## https://github.com/solana-labs/solana/commit/01f1bf27994d9813fadfcd134befd3a449aaa0bd
+##
+## For curve25519-dalek we’re using commit from a PR, see
+## https://github.com/dalek-cryptography/curve25519-dalek/pull/606
+#aes-gcm-siv = { git = "https://github.com/RustCrypto/AEADs", rev = "6105d7a5591aefa646a95d12b5e8d3f55a9214ef" }
+#curve25519-dalek = { git = "https://github.com/dalek-cryptography/curve25519-dalek", rev = "8274d5cbb6fc3f38cdc742b4798173895cd2a290" }
+aes-gcm-siv = { git = 'https://github.com/block-mesh/AEADs', branch = 'rustls-dep-hell-1-18' }
+curve25519-dalek = { git = "https://github.com/block-mesh/curve25519-dalek", branch = "rustls-dep-hell-1-18" }
+
+[workspace.dependencies]
+solana-client-wasm = { version = "1.18.0" }
+worker = { version = "0.3.4" }
+uuid = { version = "1.16.0" }
+tracing-web = { version = "0.1" }
+tracing-subscriber = { version = "0.3.19", features = ['time', 'json'] }
+tracing = { version = "0.1.41" }
+time = { version = "0.3.41", features = ['wasm-bindgen'] }
+reqwest = { version = "0.12.5", features = ["json"] }
+getrandom = { version = "0.2", features = ["js"] }
+chrono = { version = "0.4.40", features = ["wasmbind", "wasm-bindgen", "js-sys"] }
+bytemuck = { version = "1.22.0" }
+serde-wasm-bindgen = { version = "0.6.5" }
+solana-address-lookup-table-interface = { version = "0.0.1" }
+wasm-bindgen = { version = "=0.2.93" }
+solana-bn254 = { version = "2.2.1" }
+k256 = { version = "0.13.4", features = ["arithmetic"] }
+elliptic-curve = "0.13.8"
+arrayref = { version = "0.3.7" }
+solana-secp256k1 = { version = "0.1.5" }
+anchor-lang-idl = { version = "0.1.1", features = ["convert"] }
+anchor-client = { version = "0.30.1", features = ["async"] }
+anchor-lang = { version = "0.29.0", features = ["init-if-needed"] }
+anchor-spl = { version = "0.29.0", features = ["spl-associated-token-account", "spl-token", "metadata"] }
+solana-client = { version = "1.18.20" }
+solana-program-test = { version = "1.18.20" }
+solana-zk-token-sdk = { version = "1.18.20" }
+solana-account-decoder = { version = "1.18.20" }
+solana-program = { version = "1.18.20" }
+solana-curve25519 = { version = "2.2.0" }
+solana-poseidon = { version = "2.2.0" }
+solana-sdk = { version = "1.18.20" }
+rs_merkle = "1.4"
+sha2 = { version = "0.10.8" }
+serde = { version = "1.0.164", features = ["derive"] }
+serde_json = { version = "1", features = ["raw_value"] }
+groth16-solana = { version = "0.0.3" }
+ark-bn254 = { version = "0.5.0" }
+ark-serialize = { version = "0.5.0" }
+ark-ff = { version = "0.5.0" }
+anyhow = { version = "1.0.71" }
+thiserror = { version = "1.0.40" }
+num-bigint = { version = "0.4.6" }
+num-traits = { version = "0.2.19" }
+num-integer = { version = "0.1.46" }
+#curve25519-dalek = { version = "4.1.3", features = ["alloc"] }
+#curve25519-dalek = { git = "https://github.com/block-mesh/curve25519-dalek", branch = "rustls-dep-hell-1-18", default-features = false, features = ["zeroize"] }
+borsh = { version = "0.10.4" }
+
+
+[workspace.dependencies.rand]
+version = "0.9.0"

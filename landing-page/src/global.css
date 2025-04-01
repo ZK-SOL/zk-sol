@@ -1,0 +1,123 @@
+@import "./styles/reset.css";
+@import "./styles/font.css";
+@import "./styles/props.css";
+
+body {
+    background-color: var(--color-surface-1);
+    font-family: var(--font-family-sans);
+    line-height: 1.5;
+    letter-spacing: -0.00875rem;
+
+    color: color-mix(
+            var(--color-mix),
+            var(--color-on-surface-1),
+            10% transparent
+    );
+
+    min-block-size: 100vh;
+
+    background-image: url(/body.svg);
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+
+:where(h1, h2, h3, h4, h5, h6) {
+    font-weight: 700;
+}
+
+:where(a) {
+    font-weight: 400;
+    color: color-mix(
+            var(--color-mix),
+            var(--color-on-surface-1),
+            10% transparent
+    );
+}
+
+:where(p, output) {
+    font-weight: 200;
+    color: color-mix(
+            var(--color-mix),
+            var(--color-on-surface-1),
+            20% transparent
+    );
+}
+
+:where(button) {
+    border-color: transparent;
+    cursor: pointer;
+    transition: color ease-out 200ms,
+    background-color ease-out 120ms,
+    scale ease-out 60ms;
+
+    &:where(:hover) {
+        scale: 1.035;
+    }
+
+    &:where(:active) {
+        scale: 0.985;
+    }
+}
+
+:where(u) {
+    text-decoration: underline;
+    text-underline-offset: 0.2cap;
+}
+
+:where(output.error) {
+    color: var(--color-error-1);
+}
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 222.2 84% 4.9%;
+        --foreground: 210 40% 98%;
+        --card: 222.2 84% 4.9%;
+        --card-foreground: 210 40% 98%;
+        --popover: 222.2 84% 4.9%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 222.2 47.4% 11.2%;
+        --primary-foreground: 210 40% 98%;
+        --secondary: 217.2 32.6% 17.5%;
+        --secondary-foreground: 210 40% 98%;
+        --muted: 217.2 32.6% 17.5%;
+        --muted-foreground: 215 20.2% 65.1%;
+        --accent: 217.2 32.6% 17.5%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 217.2 32.6% 17.5%;
+        --input: 217.2 32.6% 17.5%;
+        --ring: 212.7 26.8% 83.9%;
+    }
+}
+
+@layer base {
+    body {
+        @apply bg-background text-foreground antialiased;
+    }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(214, 188, 250, 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(214, 188, 250, 0.5);
+}

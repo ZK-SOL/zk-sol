@@ -1,0 +1,30 @@
+{
+  "name": "cloudflare-worker-typescript",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "0.29.0",
+    "@metaplex-foundation/beet-solana": "0.4.1",
+    "@metaplex-foundation/solita": "0.20.1",
+    "@solana/spl-token": "0.4.12",
+    "@solana/web3.js": "1.98.0",
+    "rpc-websockets": "9.0.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250321.0",
+    "typescript": "^5.5.2",
+    "wrangler": "^4.5.0",
+    "@types/bn.js": "5.1.0",
+    "chai": "4.3.4",
+    "mocha": "9.0.3",
+    "prettier": "2.6.2",
+    "ts-mocha": "10.0.0",
+    "tsx": "4.19.3"
+  }
+}

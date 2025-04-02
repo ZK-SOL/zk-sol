@@ -42,6 +42,7 @@ const Claim = () => {
     const [index, setIndex] = useState<number>();
     const [recipient, setRecipient] = useState<PublicKey>(new PublicKey("8ztKyNZ6PmhsB7VEzi19h3Mk1TPqW3zZ8Pd4bshcv2y4"));
     const [circutName, setCircuitName] = useState<string>(`withdraw${depth}`);
+    const [closePdaAccount, setClosePdaAccount] = useState<PublicKey>();
 
 
     useEffect(() => {
@@ -59,6 +60,34 @@ const Claim = () => {
         setMerkleZeros(merkleZeros)
         setCircuitName(`withdraw${depth}`)
     }, [depth])
+
+    async function close_pda() {
+        if (!walletContextState.publicKey) {
+            alert("Connect wallet first")
+            return
+        }
+        if (!closePdaAccount) {
+            alert("no close pda");
+            return
+        }
+        const close_pda_account = buildClosePdaAccountTransactionInstruction({
+            signer: walletContextState.publicKey,
+            account: closePdaAccount
+        })
+        const tx = new Transaction();
+        tx.add(modifyComputeUnits)
+        tx.add(close_pda_account);
+        const block = await connection.getLatestBlockhash();
+        console.log("connection", connection.rpcEndpoint)
+        tx.recentBlockhash = block.blockhash;
+        tx.lastValidBlockHeight = block.lastValidBlockHeight;
+        tx.feePayer = walletContextState.publicKey;
+        const txDespoitHash = await walletContextState.sendTransaction(tx, connection, {
+            skipPreflight: true,
+            preflightCommitment: "confirmed"
+        });
+        console.log('close_pda', txDespoitHash)
+    }
 
     async function close_merkle() {
         try {
@@ -292,6 +321,16 @@ const Claim = () => {
                 <input type={"text"} width={"100%"} disabled={true} value={merkleZeros?.toBase58()}/>
                 <br/>
                 <hr/>
+                <h1>close pda</h1>
+                <input type={"text"} width={"100%"} value={closePdaAccount?.toBase58()} onChange={e => {
+                    try {
+                        const p = new PublicKey(e.target.value)
+                        setClosePdaAccount(p)
+                    } catch (error) {
+                    }
+                }}/>
+                <br/>
+                <hr/>
                 <h1>depth</h1>
                 <input type={"number"} step={1} onChange={e => setDepth(parseInt(e.target.value))}
                        placeholder={`Depth ${depth}`} value={depth}/>
@@ -314,6 +353,10 @@ const Claim = () => {
                     } catch (error) {
                     }
                 }}/>
+                <br/>
+                <button className={`ghost ${styles.button}`} onClick={close_pda}>
+                    Close PDA
+                </button>
                 <br/>
                 <button className={`ghost ${styles.button}`} onClick={close_merkle}>
                     Close Merkle

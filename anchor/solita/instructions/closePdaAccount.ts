@@ -10,52 +10,50 @@ import * as web3 from '@solana/web3.js'
 
 /**
  * @category Instructions
- * @category CloseMerkle
+ * @category ClosePdaAccount
  * @category generated
  */
-export const closeMerkleStruct = new beet.BeetArgsStruct<{
+export const closePdaAccountStruct = new beet.BeetArgsStruct<{
   instructionDiscriminator: number[] /* size: 8 */
 }>(
   [['instructionDiscriminator', beet.uniformFixedSizeArray(beet.u8, 8)]],
-  'CloseMerkleInstructionArgs'
+  'ClosePdaAccountInstructionArgs'
 )
 /**
- * Accounts required by the _closeMerkle_ instruction
+ * Accounts required by the _closePdaAccount_ instruction
  *
  * @property [_writable_, **signer**] signer
- * @property [_writable_] merkle
- * @property [_writable_] merkleZeros
+ * @property [_writable_] account
  * @category Instructions
- * @category CloseMerkle
+ * @category ClosePdaAccount
  * @category generated
  */
-export type CloseMerkleInstructionAccounts = {
+export type ClosePdaAccountInstructionAccounts = {
   signer: web3.PublicKey
-  merkle: web3.PublicKey
-  merkleZeros: web3.PublicKey
+  account: web3.PublicKey
   systemProgram?: web3.PublicKey
   rent?: web3.PublicKey
   anchorRemainingAccounts?: web3.AccountMeta[]
 }
 
-export const closeMerkleInstructionDiscriminator = [
-  235, 44, 43, 113, 246, 114, 62, 167,
+export const closePdaAccountInstructionDiscriminator = [
+  238, 135, 49, 205, 63, 137, 150, 16,
 ]
 
 /**
- * Creates a _CloseMerkle_ instruction.
+ * Creates a _ClosePdaAccount_ instruction.
  *
  * @param accounts that will be accessed while the instruction is processed
  * @category Instructions
- * @category CloseMerkle
+ * @category ClosePdaAccount
  * @category generated
  */
-export function createCloseMerkleInstruction(
-  accounts: CloseMerkleInstructionAccounts,
+export function createClosePdaAccountInstruction(
+  accounts: ClosePdaAccountInstructionAccounts,
   programId = new web3.PublicKey('4BEBe7TVDef5Nfdft252mMCSNBBmPLQ2gVXmKvJvSbP1')
 ) {
-  const [data] = closeMerkleStruct.serialize({
-    instructionDiscriminator: closeMerkleInstructionDiscriminator,
+  const [data] = closePdaAccountStruct.serialize({
+    instructionDiscriminator: closePdaAccountInstructionDiscriminator,
   })
   const keys: web3.AccountMeta[] = [
     {
@@ -64,12 +62,7 @@ export function createCloseMerkleInstruction(
       isSigner: true,
     },
     {
-      pubkey: accounts.merkle,
-      isWritable: true,
-      isSigner: false,
-    },
-    {
-      pubkey: accounts.merkleZeros,
+      pubkey: accounts.account,
       isWritable: true,
       isSigner: false,
     },

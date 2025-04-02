@@ -1,3 +1,4 @@
+import {sha256} from '@noble/hashes/sha256';
 import {poseidon1, poseidon2} from 'poseidon-lite'
 import {GenerateProofPath} from "./wrappers/merkle_wrapper";
 
@@ -178,7 +179,7 @@ export class CryptoHelper {
      * @param bigInt - BigInt
      * @returns Buffer
      */
-    static to32ByteBuffer(bigInt: bigint): Buffer {
+    static to32ByteBuffer(bigInt): Buffer {
         const hexString = bigInt.toString(16).padStart(64, '0');
         return Buffer.from(hexString, "hex");
     }
@@ -299,6 +300,15 @@ export class CryptoHelper {
         }
 
         return new Uint8Array(arr);
+    }
+
+    /**
+     * `sha256digest` - SHA256 of a number array, as a Uint8Array
+     * @param input
+     */
+    static sha256digest(input: number[]): Uint8Array {
+        const data: Uint8Array = new Uint8Array(input)
+        return sha256(data);
     }
 
     /**

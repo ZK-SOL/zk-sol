@@ -14,7 +14,7 @@ zklsol = "4BEBe7TVDef5Nfdft252mMCSNBBmPLQ2gVXmKvJvSbP1"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "Devnet"
 wallet = "/Users/ohaddahan/.config/solana/id.json"
 
 [scripts]

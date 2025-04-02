@@ -1,7 +1,7 @@
 import { Connection, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import {
-  CloseMerkleInstructionAccounts,
-  createCloseMerkleInstruction,
+  ClosePdaAccountInstructionAccounts,
+  createClosePdaAccountInstruction,
   createCreateMerkleInstruction,
   createDepositInstruction,
   createDumpProofInstruction,
@@ -274,19 +274,16 @@ export async function buildDumpProofTransactionInstruction({
 
 export type BuildCloseMerkleTransactionInstructionInputs = {
   signer: PublicKey;
-  depth: number;
+  account: PublicKey;
 };
 
-export function buildCloseMerkleTransactionInstruction({
+export function buildClosePdaAccountTransactionInstruction({
   signer,
-  depth,
+  account,
 }: BuildCloseMerkleTransactionInstructionInputs): TransactionInstruction {
-  const [merkle] = getMerkleAddress(depth);
-  const [merkleZeros] = getMerkleZerosAddress(depth);
-  const accounts: CloseMerkleInstructionAccounts = {
+  const accounts: ClosePdaAccountInstructionAccounts = {
     signer,
-    merkle,
-    merkleZeros,
+    account,
   };
-  return createCloseMerkleInstruction(accounts);
+  return createClosePdaAccountInstruction(accounts);
 }

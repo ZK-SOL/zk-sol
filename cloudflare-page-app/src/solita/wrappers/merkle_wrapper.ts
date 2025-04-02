@@ -1,7 +1,7 @@
 import {Connection, PublicKey, TransactionInstruction} from "@solana/web3.js";
 import {
-    CloseMerkleInstructionAccounts,
-    createCloseMerkleInstruction,
+    ClosePdaAccountInstructionAccounts,
+    createClosePdaAccountInstruction,
     createCreateMerkleInstruction,
     createDepositInstruction,
     createDumpProofInstruction,
@@ -84,18 +84,12 @@ export async function buildDepositTransactionInstruction({
                                                          }: BuildDepositTransactionInstructionInputs): Promise<
     TransactionInstruction[]
 > {
-    console.log("87")
     const instructions: TransactionInstruction[] = [];
     const [merkle] = getMerkleAddress(depth);
-    console.log("90")
     const merkleAccount = await getMerkleAccount(connection, depth);
-    console.log("92")
     const mint = merkleAccount.mint;
-    console.log("94")
     const [merkleTokenAccount] = getMerkleTokenAddress(depth, mint);
-    console.log("96")
     const signerTokenAccount = getAssociatedTokenAddressSync(mint, signer);
-    console.log("94")
     const getOrCreateInstruction = await getOrCreateTokenAccountInstruction(
         mint,
         signer,
@@ -105,19 +99,16 @@ export async function buildDepositTransactionInstruction({
         instructions.push(getOrCreateInstruction);
     }
 
-    console.log("104")
     const [merkleZeros] = getMerkleZerosAddress(depth);
     const [pendingProof] = getMerklePendingProofAddress(
         depth,
         Number(merkleAccount.nextIndex)
     );
-    console.log("110")
     const args: DepositInstructionArgs = {
         args: {
             input,
         },
     };
-    console.log("110")
     const accounts: DepositInstructionAccounts = {
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         mint,
@@ -129,7 +120,6 @@ export async function buildDepositTransactionInstruction({
         pendingProof,
     };
     instructions.push(createDepositInstruction(accounts, args));
-    console.log("128")
     return instructions;
 }
 
@@ -284,19 +274,16 @@ export async function buildDumpProofTransactionInstruction({
 
 export type BuildCloseMerkleTransactionInstructionInputs = {
     signer: PublicKey;
-    depth: number;
+    account: PublicKey;
 };
 
-export function buildCloseMerkleTransactionInstruction({
-                                                           signer,
-                                                           depth,
-                                                       }: BuildCloseMerkleTransactionInstructionInputs): TransactionInstruction {
-    const [merkle] = getMerkleAddress(depth);
-    const [merkleZeros] = getMerkleZerosAddress(depth);
-    const accounts: CloseMerkleInstructionAccounts = {
+export function buildClosePdaAccountTransactionInstruction({
+                                                               signer,
+                                                               account,
+                                                           }: BuildCloseMerkleTransactionInstructionInputs): TransactionInstruction {
+    const accounts: ClosePdaAccountInstructionAccounts = {
         signer,
-        merkle,
-        merkleZeros,
+        account,
     };
-    return createCloseMerkleInstruction(accounts);
+    return createClosePdaAccountInstruction(accounts);
 }

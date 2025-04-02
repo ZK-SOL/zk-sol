@@ -1,5 +1,5 @@
 export * from './closeAddressLookupTable'
-export * from './closeMerkle'
+export * from './closePdaAccount'
 export * from './createAddressLookupTable'
 export * from './createMerkle'
 export * from './createMerkleNode'

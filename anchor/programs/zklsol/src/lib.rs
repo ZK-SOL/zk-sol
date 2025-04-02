@@ -15,8 +15,8 @@ declare_id!("4BEBe7TVDef5Nfdft252mMCSNBBmPLQ2gVXmKvJvSbP1");
 pub mod zklsol {
     use super::*;
 
-    pub fn close_merkle(ctx: Context<CloseMerkle>) -> Result<()> {
-        close_merkle::close_merkle(ctx)
+    pub fn close_pda_account(ctx: Context<ClosePdaAccount>) -> Result<()> {
+        close_pda_account::close_pda_account(ctx)
     }
 
     pub fn dump_proof(ctx: Context<DumpProof>) -> Result<()> {

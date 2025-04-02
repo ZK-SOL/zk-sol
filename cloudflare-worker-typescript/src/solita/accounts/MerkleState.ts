@@ -23,6 +23,7 @@ export type MerkleStateArgs = {
   nextIndex: beet.bignum
   lowestPendingProofIndex: beet.bignum
   highestPendingProofIndex: beet.bignum
+  mint: web3.PublicKey
   roots: number[] /* size: 32 */[]
   filledSubTrees: number[] /* size: 32 */[]
 }
@@ -45,6 +46,7 @@ export class MerkleState implements MerkleStateArgs {
     readonly nextIndex: beet.bignum,
     readonly lowestPendingProofIndex: beet.bignum,
     readonly highestPendingProofIndex: beet.bignum,
+    readonly mint: web3.PublicKey,
     readonly roots: number[] /* size: 32 */[],
     readonly filledSubTrees: number[] /* size: 32 */[]
   ) {}
@@ -62,6 +64,7 @@ export class MerkleState implements MerkleStateArgs {
       args.nextIndex,
       args.lowestPendingProofIndex,
       args.highestPendingProofIndex,
+      args.mint,
       args.roots,
       args.filledSubTrees
     )
@@ -240,6 +243,7 @@ export class MerkleState implements MerkleStateArgs {
         }
         return x
       })(),
+      mint: this.mint.toBase58(),
       roots: this.roots,
       filledSubTrees: this.filledSubTrees,
     }
@@ -266,6 +270,7 @@ export const merkleStateBeet = new beet.FixableBeetStruct<
     ['nextIndex', beet.u64],
     ['lowestPendingProofIndex', beet.u64],
     ['highestPendingProofIndex', beet.u64],
+    ['mint', beetSolana.publicKey],
     ['roots', beet.array(beet.uniformFixedSizeArray(beet.u8, 32))],
     ['filledSubTrees', beet.array(beet.uniformFixedSizeArray(beet.u8, 32))],
   ],

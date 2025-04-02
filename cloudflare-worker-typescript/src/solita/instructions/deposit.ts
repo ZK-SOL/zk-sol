@@ -5,6 +5,7 @@
  * See: https://github.com/metaplex-foundation/solita
  */
 
+import * as splToken from '@solana/spl-token'
 import * as beet from '@metaplex-foundation/beet'
 import * as web3 from '@solana/web3.js'
 import { DepositArgs, depositArgsBeet } from '../types/DepositArgs'
@@ -37,18 +38,27 @@ export const depositStruct = new beet.BeetArgsStruct<
  * Accounts required by the _deposit_ instruction
  *
  * @property [_writable_, **signer**] signer
+ * @property [_writable_] signerTokenAccount
  * @property [_writable_] merkle
+ * @property [_writable_] merkleTokenAccount
  * @property [] merkleZeros
  * @property [_writable_] pendingProof
+ * @property [] mint
+ * @property [] associatedTokenProgram
  * @category Instructions
  * @category Deposit
  * @category generated
  */
 export type DepositInstructionAccounts = {
   signer: web3.PublicKey
+  signerTokenAccount: web3.PublicKey
   merkle: web3.PublicKey
+  merkleTokenAccount: web3.PublicKey
   merkleZeros: web3.PublicKey
   pendingProof: web3.PublicKey
+  tokenProgram?: web3.PublicKey
+  mint: web3.PublicKey
+  associatedTokenProgram: web3.PublicKey
   systemProgram?: web3.PublicKey
   rent?: web3.PublicKey
   anchorRemainingAccounts?: web3.AccountMeta[]
@@ -84,7 +94,17 @@ export function createDepositInstruction(
       isSigner: true,
     },
     {
+      pubkey: accounts.signerTokenAccount,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
       pubkey: accounts.merkle,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.merkleTokenAccount,
       isWritable: true,
       isSigner: false,
     },
@@ -96,6 +116,21 @@ export function createDepositInstruction(
     {
       pubkey: accounts.pendingProof,
       isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.tokenProgram ?? splToken.TOKEN_PROGRAM_ID,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.mint,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.associatedTokenProgram,
+      isWritable: false,
       isSigner: false,
     },
     {

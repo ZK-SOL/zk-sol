@@ -5,6 +5,7 @@
  * See: https://github.com/metaplex-foundation/solita
  */
 
+import * as splToken from '@solana/spl-token'
 import * as beet from '@metaplex-foundation/beet'
 import * as web3 from '@solana/web3.js'
 import { WithdrawArgs, withdrawArgsBeet } from '../types/WithdrawArgs'
@@ -38,8 +39,12 @@ export const withdrawStruct = new beet.BeetArgsStruct<
  *
  * @property [_writable_, **signer**] signer
  * @property [_writable_] merkle
+ * @property [_writable_] merkleTokenAccount
  * @property [_writable_] recipient
+ * @property [_writable_] recipientTokenAccount
  * @property [_writable_] nullifierHash
+ * @property [] mint
+ * @property [] associatedTokenProgram
  * @category Instructions
  * @category Withdraw
  * @category generated
@@ -47,8 +52,13 @@ export const withdrawStruct = new beet.BeetArgsStruct<
 export type WithdrawInstructionAccounts = {
   signer: web3.PublicKey
   merkle: web3.PublicKey
+  merkleTokenAccount: web3.PublicKey
   recipient: web3.PublicKey
+  recipientTokenAccount: web3.PublicKey
   nullifierHash: web3.PublicKey
+  tokenProgram?: web3.PublicKey
+  mint: web3.PublicKey
+  associatedTokenProgram: web3.PublicKey
   systemProgram?: web3.PublicKey
   rent?: web3.PublicKey
   anchorRemainingAccounts?: web3.AccountMeta[]
@@ -89,13 +99,38 @@ export function createWithdrawInstruction(
       isSigner: false,
     },
     {
+      pubkey: accounts.merkleTokenAccount,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
       pubkey: accounts.recipient,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.recipientTokenAccount,
       isWritable: true,
       isSigner: false,
     },
     {
       pubkey: accounts.nullifierHash,
       isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.tokenProgram ?? splToken.TOKEN_PROGRAM_ID,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.mint,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.associatedTokenProgram,
+      isWritable: false,
       isSigner: false,
     },
     {

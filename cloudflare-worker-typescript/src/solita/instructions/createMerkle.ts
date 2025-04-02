@@ -5,6 +5,7 @@
  * See: https://github.com/metaplex-foundation/solita
  */
 
+import * as splToken from '@solana/spl-token'
 import * as beet from '@metaplex-foundation/beet'
 import * as web3 from '@solana/web3.js'
 import {
@@ -41,7 +42,10 @@ export const createMerkleStruct = new beet.BeetArgsStruct<
  *
  * @property [_writable_, **signer**] signer
  * @property [_writable_] merkle
+ * @property [_writable_] merkleTokenAccount
  * @property [_writable_] merkleZeros
+ * @property [] mint
+ * @property [] associatedTokenProgram
  * @category Instructions
  * @category CreateMerkle
  * @category generated
@@ -49,8 +53,12 @@ export const createMerkleStruct = new beet.BeetArgsStruct<
 export type CreateMerkleInstructionAccounts = {
   signer: web3.PublicKey
   merkle: web3.PublicKey
+  merkleTokenAccount: web3.PublicKey
   merkleZeros: web3.PublicKey
+  mint: web3.PublicKey
   systemProgram?: web3.PublicKey
+  tokenProgram?: web3.PublicKey
+  associatedTokenProgram: web3.PublicKey
   rent?: web3.PublicKey
   anchorRemainingAccounts?: web3.AccountMeta[]
 }
@@ -90,12 +98,32 @@ export function createCreateMerkleInstruction(
       isSigner: false,
     },
     {
+      pubkey: accounts.merkleTokenAccount,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
       pubkey: accounts.merkleZeros,
       isWritable: true,
       isSigner: false,
     },
     {
+      pubkey: accounts.mint,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
       pubkey: accounts.systemProgram ?? web3.SystemProgram.programId,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.tokenProgram ?? splToken.TOKEN_PROGRAM_ID,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.associatedTokenProgram,
       isWritable: false,
       isSigner: false,
     },

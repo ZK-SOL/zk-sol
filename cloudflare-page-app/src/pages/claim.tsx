@@ -4,7 +4,6 @@ import styles from './claim.module.css'
 import {useEffect, useState} from 'react'
 import {useNavigate} from 'react-router'
 import {useConnection, useWallet} from '@solana/wallet-adapter-react'
-
 import {
     LAMPORTS_PER_SOL, PublicKey,
     Transaction
@@ -26,6 +25,7 @@ import {
     getMerkleZerosAddress
 } from "../solita/pda/merkle_pda.ts";
 import {run_circuit, ZkHelper} from "../solita/zk-helper.ts";
+import {PROGRAM_ID} from "../solita";
 
 const Claim = () => {
     const navigate = useNavigate()
@@ -60,6 +60,36 @@ const Claim = () => {
         setMerkleZeros(merkleZeros)
         setCircuitName(`withdraw${depth}`)
     }, [depth])
+
+    async function clear_pda() {
+        if (!walletContextState.publicKey) {
+            alert("Connect wallet first")
+            return
+        }
+        if (!prompt("Are you sure?")) {
+            return
+        }
+        const accounts = await connection.getProgramAccounts(PROGRAM_ID)
+        for (const account of accounts.values()) {
+            const close_pda_account = buildClosePdaAccountTransactionInstruction({
+                signer: walletContextState.publicKey,
+                account: account.pubkey
+            })
+            const tx = new Transaction();
+            tx.add(modifyComputeUnits)
+            tx.add(close_pda_account);
+            const block = await connection.getLatestBlockhash();
+            console.log("connection", connection.rpcEndpoint)
+            tx.recentBlockhash = block.blockhash;
+            tx.lastValidBlockHeight = block.lastValidBlockHeight;
+            tx.feePayer = walletContextState.publicKey;
+            const txDespoitHash = await walletContextState.sendTransaction(tx, connection, {
+                skipPreflight: true,
+                preflightCommitment: "confirmed"
+            });
+            console.log('clear_pda', txDespoitHash)
+        }
+    }
 
     async function close_pda() {
         if (!walletContextState.publicKey) {
@@ -372,6 +402,10 @@ const Claim = () => {
                 <br/>
                 <button className={`ghost ${styles.button}`} onClick={withdraw_merkle}>
                     Withdraw
+                </button>
+                <br/>
+                <button className={`ghost ${styles.button}`} onClick={clear_pda}>
+                    DANGER: CLEAR ALL
                 </button>
                 <br/>
             </div>

@@ -24,6 +24,7 @@ export const dumpProofStruct = new beet.BeetArgsStruct<{
  *
  * @property [_writable_, **signer**] signer
  * @property [_writable_] merkle
+ * @property [] mint
  * @property [_writable_] pendingProof
  * @category Instructions
  * @category DumpProof
@@ -32,6 +33,7 @@ export const dumpProofStruct = new beet.BeetArgsStruct<{
 export type DumpProofInstructionAccounts = {
   signer: web3.PublicKey
   merkle: web3.PublicKey
+  mint: web3.PublicKey
   pendingProof: web3.PublicKey
   systemProgram?: web3.PublicKey
   rent?: web3.PublicKey
@@ -66,6 +68,11 @@ export function createDumpProofInstruction(
     {
       pubkey: accounts.merkle,
       isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: accounts.mint,
+      isWritable: false,
       isSigner: false,
     },
     {

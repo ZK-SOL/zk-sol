@@ -18,7 +18,7 @@ pub struct CreateMerkle<'info> {
     pub signer: Signer<'info>,
     #[account(init,
     payer = signer,
-    seeds = [MerkleState::SEED.as_bytes().as_ref(), args.depth.to_le_bytes().as_ref()],
+    seeds = [MerkleState::SEED.as_bytes().as_ref(), mint.key().as_ref(), args.depth.to_le_bytes().as_ref()],
     space = MerkleState::SIZE,
     bump
     )]
@@ -34,7 +34,7 @@ pub struct CreateMerkle<'info> {
     pub merkle_token_account: Box<Account<'info, TokenAccount>>,
     #[account(init,
     payer = signer,
-    seeds = [MerkleZeros::SEED.as_bytes().as_ref(), args.depth.to_le_bytes().as_ref()],
+    seeds = [MerkleZeros::SEED.as_bytes().as_ref(), mint.key().as_ref(), args.depth.to_le_bytes().as_ref()],
     space = MerkleZeros::SIZE,
     bump
     )]

@@ -70,13 +70,16 @@ async function run(network: string, depth: number) {
                     keypair,
                 )
                 if (sig) {
-                    await connection.getParsedTransaction(
+                    const txn = await connection.getParsedTransaction(
                         sig.Signature,
                         {
                             commitment: 'confirmed',
                             maxSupportedTransactionVersion: 0
                         }
                     )
+                    if (txn) {
+                        console.log("txn:", txn.transaction.message)
+                    }
                 }
             } catch (error: any) {
                 console.error("run error: mint", mint.toBase58(), " error : ", error)

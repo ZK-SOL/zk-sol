@@ -24,11 +24,11 @@ pub struct CreateMerkle<'info> {
     )]
     pub merkle: Box<Account<'info, MerkleState>>,
     #[account(
-    init,
+    init_if_needed,
     payer = signer,
     token::mint = mint,
     token::authority = merkle,
-    seeds = [MerkleState::SEED.as_bytes().as_ref(), args.depth.to_le_bytes().as_ref(), mint.key().as_ref()],
+    seeds = [MerkleState::SEED.as_bytes().as_ref(), mint.key().as_ref(), args.depth.to_le_bytes().as_ref()],
     bump
     )]
     pub merkle_token_account: Box<Account<'info, TokenAccount>>,

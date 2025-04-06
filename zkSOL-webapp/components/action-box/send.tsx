@@ -17,6 +17,7 @@ import { run_circuit } from '@/solita/zk-helper';
 import TokenDropdown from '../token-dropdown';
 import axios from 'axios';
 import { addToast } from '@heroui/react';
+import { NATIVE_MINT } from '@solana/spl-token';
 // Define token interface
 interface Token {
   chainId: number;
@@ -59,7 +60,42 @@ const Send: React.FC = () => {
   const [merkleAddress, setMerkleAddress] = useState<PublicKey>();
   const [merkleZeros, setMerkleZeros] = useState<PublicKey>();
   const [circutName, setCircuitName] = useState<string>(`withdraw${depth}`);
-  const [tokens, setTokens] = useState<Token[]>([]);
+  const [tokens, setTokens] = useState<Token[]>([{
+    chainId: 101,
+    address: NATIVE_MINT.toString(),
+    symbol: "SOL",
+    name: "Solana",
+    decimals: 9,
+    logoURI:
+      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+
+  },
+  {
+    chainId: 101,
+    address: "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
+    symbol: "JitoSOL",
+    name: "Jito Staked SOL",
+    decimals: 9,
+    logoURI: "https://storage.googleapis.com/token-metadata/JitoSOL-256.png",
+    tags: [
+        "community",
+        "lst",
+        "strict",
+        "verified"
+    ],
+
+  },
+  {
+    chainId: 101,
+    address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    decimals: 6,
+    logoURI: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+    name: "USD Coin",
+    symbol: "USDC",
+
+  }
+
+]);
 
    const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
     units: 3000000 // Set desired compute units (max 1,400,000)
@@ -85,24 +121,8 @@ const handleZkProofInput = (value: string) => {
   }
 };
 
-const getTokens = async () => {
-  const tokens = await axios.get('https://token.jup.ag/strict')
-  return tokens.data
-}
 
-// Fetch tokens on component mount
-useEffect(() => {
-  const fetchTokens = async () => {
-    try {
-      const tokenData = await getTokens();
-      setTokens(tokenData);
-    } catch (error) {
-      console.error('Error fetching tokens:', error);
-    }
-  };
-  
-  fetchTokens();
-}, []);
+
 useEffect(() => {
   const [merkle] = getMerkleAddress(depth);
   const [merkleZeros] = getMerkleZerosAddress(depth)

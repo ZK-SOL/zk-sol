@@ -69,6 +69,7 @@ async function run(network: string, depth: number) {
                     connection,
                     keypair,
                 )
+                console.log("sig:", sig)
                 if (sig) {
                     const txn = await connection.getParsedTransaction(
                         sig.Signature,

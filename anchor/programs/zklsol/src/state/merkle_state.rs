@@ -24,6 +24,7 @@ pub struct MerkleState {
 
 impl MerkleState {
     pub const SEED: &'static str = "Merkle";
+    pub const TOKEN_SEED: &'static str = "MerkleToken";
     pub const SIZE: usize =
         // discriminator
         8 +

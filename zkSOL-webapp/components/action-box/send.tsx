@@ -1,23 +1,31 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from "react";
 import { Button } from "@heroui/button";
-import {Input} from "@heroui/input";
+import { Input } from "@heroui/input";
 import { Card } from "@heroui/card";
-import { WalletGuard } from '../WalletGuard';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useConnection } from '@solana/wallet-adapter-react';
-import { ComputeBudgetProgram, PublicKey, Transaction } from '@solana/web3.js';
-import { CryptoHelper } from '@/solita/crypto-helpers';
-import { buildWithdrawTransactionInstruction, GenerateProofPath } from '@/solita/wrappers/merkle_wrapper';
-import { ZkHelper } from '@/solita/zk-helper';
-import { getMerkleAccount, getMerkleAddress, getMerkleZerosAddress } from '@/solita/pda/merkle_pda';
-import { getMerkleNodeAccount } from '@/solita/pda/merkle_pda';
-import { run_circuit } from '@/solita/zk-helper';
-import TokenDropdown from '../token-dropdown';
-import axios from 'axios';
-import { addToast } from '@heroui/react';
-import { NATIVE_MINT } from '@solana/spl-token';
+import { WalletGuard } from "../WalletGuard";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { ComputeBudgetProgram, PublicKey, Transaction } from "@solana/web3.js";
+import { CryptoHelper } from "@/solita/crypto-helpers";
+import {
+  buildWithdrawTransactionInstruction,
+  GenerateProofPath,
+} from "@/solita/wrappers/merkle_wrapper";
+import { ZkHelper } from "@/solita/zk-helper";
+import {
+  getMerkleAccount,
+  getMerkleAddress,
+  getMerkleZerosAddress,
+} from "@/solita/pda/merkle_pda";
+import { getMerkleNodeAccount } from "@/solita/pda/merkle_pda";
+import { run_circuit } from "@/solita/zk-helper";
+import TokenDropdown from "../token-dropdown";
+import axios from "axios";
+import { addToast } from "@heroui/react";
+import { NATIVE_MINT } from "@solana/spl-token";
+
 // Define token interface
 interface Token {
   chainId: number;
@@ -34,10 +42,10 @@ interface Token {
 }
 
 const Send: React.FC = () => {
-  const { publicKey, sendTransaction,signTransaction }: any = useWallet();
+  const { publicKey, sendTransaction, signTransaction }: any = useWallet();
   const { connection } = useConnection();
   const [isLoading, setIsLoading] = useState(false);
-  const [zkProofInput, setZkProofInput] = useState<string>('');
+  const [zkProofInput, setZkProofInput] = useState<string>("");
   // Combine related state
   const [sendFormState, setSendFormState] = useState<{
     selectedToken: Token | null;
@@ -52,176 +60,177 @@ const Send: React.FC = () => {
     nullifer: 10,
     index: 0,
     amount: 0,
-    receiverAddress: '',
+    receiverAddress: "",
   });
   const [nullifer, setNullifer] = useState<number>();
   const [secret, setSecret] = useState<number>();
-  const [depth, setDepth] = useState<number>(20)
+  const [depth, setDepth] = useState<number>(20);
   const [merkleAddress, setMerkleAddress] = useState<PublicKey>();
   const [merkleZeros, setMerkleZeros] = useState<PublicKey>();
   const [circutName, setCircuitName] = useState<string>(`withdraw${depth}`);
-  const [tokens, setTokens] = useState<Token[]>([{
-    chainId: 101,
-    address: NATIVE_MINT.toString(),
-    symbol: "SOL",
-    name: "Solana",
-    decimals: 9,
-    logoURI:
-      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+  const [tokens, setTokens] = useState<Token[]>([
+    {
+      chainId: 101,
+      address: NATIVE_MINT.toString(),
+      symbol: "SOL",
+      name: "Solana",
+      decimals: 9,
+      logoURI:
+        "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+    },
+    {
+      chainId: 101,
+      address: "4otg1HCdA1NozTX6Teh9qQzSsSeTnwSCLaFvSH4hbuCz",
+      symbol: "testSOL",
+      name: "testSOL",
+      decimals: 9,
+      logoURI:
+        "https://api.phantom.app/image-proxy/?image=https%3A%2F%2Fbafkreicp5rcho64icssijsuaexo5nfum6nf4anz4gy5dga6sjl4bp7kp3e.ipfs.nftstorage.link&anim=true&fit=cover&width=128&height=128",
+      tags: ["community", "lst", "strict", "verified"],
+    },
+    // {
+    //   chainId: 101,
+    //   address: "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
+    //   symbol: "JitoSOL",
+    //   name: "Jito Staked SOL",
+    //   decimals: 9,
+    //   logoURI: "https://storage.googleapis.com/token-metadata/JitoSOL-256.png",
+    //   tags: [
+    //       "community",
+    //       "lst",
+    //       "strict",
+    //       "verified"
+    //   ],
 
-  },
-  {
-    chainId: 101,
-    address: "4otg1HCdA1NozTX6Teh9qQzSsSeTnwSCLaFvSH4hbuCz",
-    symbol: "testSOL",
-    name: "testSOL",
-    decimals: 9,
-    logoURI: "https://api.phantom.app/image-proxy/?image=https%3A%2F%2Fbafkreicp5rcho64icssijsuaexo5nfum6nf4anz4gy5dga6sjl4bp7kp3e.ipfs.nftstorage.link&anim=true&fit=cover&width=128&height=128",
-    tags: [
-        "community",
-        "lst",
-        "strict",
-        "verified"
-    ],
-  }
-  // {
-  //   chainId: 101,
-  //   address: "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
-  //   symbol: "JitoSOL",
-  //   name: "Jito Staked SOL",
-  //   decimals: 9,
-  //   logoURI: "https://storage.googleapis.com/token-metadata/JitoSOL-256.png",
-  //   tags: [
-  //       "community",
-  //       "lst",
-  //       "strict",
-  //       "verified"
-  //   ],
+    // },
+    // {
+    //   chainId: 101,
+    //   address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    //   decimals: 6,
+    //   logoURI: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+    //   name: "USD Coin",
+    //   symbol: "USDC",
 
-  // },
-  // {
-  //   chainId: 101,
-  //   address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-  //   decimals: 6,
-  //   logoURI: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
-  //   name: "USD Coin",
-  //   symbol: "USDC",
+    // }
+  ]);
 
-  // }
+  const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
+    units: 3000000, // Set desired compute units (max 1,400,000)
+  });
 
-]);
+  // Handle ZKProof input
+  const handleZkProofInput = (value: string) => {
+    setZkProofInput(value);
+    console.log("value", value);
+    // Split the input by "-" to extract secret, nullifier, and index
+    const parts = value.split("-");
 
-   const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
-    units: 3000000 // Set desired compute units (max 1,400,000)
-});
-
-// Handle ZKProof input
-const handleZkProofInput = (value: string) => {
-  setZkProofInput(value);
-  console.log('value', value)
-  // Split the input by "-" to extract secret, nullifier, and index
-  const parts = value.split('-');
-  
-  if (parts.length === 3) {
-    const [index, nullifer, secret] = parts;
-    console.log('secret', secret, 'nullifer', nullifer, 'index', index)
-    // Update the form state with the parsed values
-    setSendFormState(prev => ({
-      ...prev,
-      secret: parseInt(secret, 10) || prev.secret,
-      nullifer: parseInt(nullifer, 10) || prev.nullifer,
-      index: parseInt(index, 10) || prev.index
-    }));
-    console.log('sendFormState', sendFormState)
-  }
-};
-
-
-
-useEffect(() => {
-  if (!sendFormState.selectedToken) {
-    return;
-  }
-
-  try {
-    const [merkle] = getMerkleAddress(depth, new PublicKey(sendFormState.selectedToken.address));
-    const [merkleZeros] = getMerkleZerosAddress(depth, new PublicKey(sendFormState.selectedToken.address));
-    setMerkleAddress(merkle)
-    setMerkleZeros(merkleZeros)
-    setCircuitName(`withdraw${depth}`)
-    console.log('my merkle', merkle.toBase58(), merkleZeros.toBase58())
-  } catch (error) {
-    console.error('Error in useEffect:', error);
-  }
-}, [depth, sendFormState])
-
- // Handle token selection
- const onTokenChange = (token: Token) => {
-  setSendFormState(prev => ({ ...prev, selectedToken: token }));
-};
-
-async function withdraw_merkle() {
-  try {
-    setIsLoading(true);
-    debugger;
-    const recipient = new PublicKey(sendFormState.receiverAddress);
-    let nullifer = sendFormState.nullifer;
-    let secret = sendFormState.secret;
-    let index = sendFormState.index;
-    console.log('formstate', sendFormState)
-    if (!publicKey) {
-        alert("Connect wallet first")
-        return
+    if (parts.length === 3) {
+      const [index, nullifer, secret] = parts;
+      console.log("secret", secret, "nullifer", nullifer, "index", index);
+      // Update the form state with the parsed values
+      setSendFormState((prev) => ({
+        ...prev,
+        secret: parseInt(secret, 10) || prev.secret,
+        nullifer: parseInt(nullifer, 10) || prev.nullifer,
+        index: parseInt(index, 10) || prev.index,
+      }));
+      console.log("sendFormState", sendFormState);
     }
-    if (!nullifer) {
-        alert("missing nullifer")
-        return
-    }
-    if (!secret) {
-        alert("missing secret")
-        return
-    }
-    if (index === undefined) {
-        alert("missing index")
-        return
-    }
-    if (!recipient) {
-        alert("missing recipient")
-        return
-    }
-    if (recipient.toBase58() === publicKey.toBase58()) {
-        alert("recipient and current wallet are the same")
-        return
-    }
+  };
+
+  useEffect(() => {
     if (!sendFormState.selectedToken) {
-        alert("missing token")
-        return
+      return;
     }
 
-    const proof_path: GenerateProofPath = CryptoHelper.generate_proof_path(depth, index);
-    const merkle = await getMerkleAccount(connection, depth, new PublicKey(sendFormState.selectedToken.address));
-    const root = CryptoHelper.numberArrayToBigInt(
-        merkle.roots[merkle.currentRootIndex]
-    );
-    const pathElements: bigint[] = [];
-    const pathIndices: (0 | 1)[] = [];
-    for (const p of proof_path) {
-        if (p.length > 2) {
-            const is_left = p[2] == 0 ? 0 : 1;
-            const index = is_left ? p[0] : p[1];
-            const node = await getMerkleNodeAccount(
-                connection,
-                depth,
-                index
-            );
-            pathElements.push(CryptoHelper.numberArrayToBigInt(node.data));
-            pathIndices.push(is_left);
-        }
+    try {
+      const [merkle] = getMerkleAddress(
+        depth,
+        new PublicKey(sendFormState.selectedToken.address),
+      );
+      const [merkleZeros] = getMerkleZerosAddress(
+        depth,
+        new PublicKey(sendFormState.selectedToken.address),
+      );
+      setMerkleAddress(merkle);
+      setMerkleZeros(merkleZeros);
+      setCircuitName(`withdraw${depth}`);
+      console.log("my merkle", merkle.toBase58(), merkleZeros.toBase58());
+    } catch (error) {
+      console.error("Error in useEffect:", error);
     }
-    
-    const nulliferR = CryptoHelper.generateAndPrepareRand(nullifer);
-    const secretR = CryptoHelper.generateAndPrepareRand(secret);
-    const circuit_output = await run_circuit({
+  }, [depth, sendFormState]);
+
+  // Handle token selection
+  const onTokenChange = (token: Token) => {
+    setSendFormState((prev) => ({ ...prev, selectedToken: token }));
+  };
+
+  async function withdraw_merkle() {
+    try {
+      setIsLoading(true);
+      const recipient = new PublicKey(sendFormState.receiverAddress);
+      let nullifer = sendFormState.nullifer;
+      let secret = sendFormState.secret;
+      let index = sendFormState.index;
+      console.log("formstate", sendFormState);
+      if (!publicKey) {
+        alert("Connect wallet first");
+        return;
+      }
+      if (!nullifer) {
+        alert("missing nullifer");
+        return;
+      }
+      if (!secret) {
+        alert("missing secret");
+        return;
+      }
+      if (index === undefined) {
+        alert("missing index");
+        return;
+      }
+      if (!recipient) {
+        alert("missing recipient");
+        return;
+      }
+      if (recipient.toBase58() === publicKey.toBase58()) {
+        alert("recipient and current wallet are the same");
+        return;
+      }
+      if (!sendFormState.selectedToken) {
+        alert("missing token");
+        return;
+      }
+
+      const proof_path: GenerateProofPath = CryptoHelper.generate_proof_path(
+        depth,
+        index,
+      );
+      const merkle = await getMerkleAccount(
+        connection,
+        depth,
+        new PublicKey(sendFormState.selectedToken.address),
+      );
+      const root = CryptoHelper.numberArrayToBigInt(
+        merkle.roots[merkle.currentRootIndex],
+      );
+      const pathElements: bigint[] = [];
+      const pathIndices: (0 | 1)[] = [];
+      for (const p of proof_path) {
+        if (p.length > 2) {
+          const is_left = p[2] == 0 ? 0 : 1;
+          const index = is_left ? p[0] : p[1];
+          const node = await getMerkleNodeAccount(connection, depth, index);
+          pathElements.push(CryptoHelper.numberArrayToBigInt(node.data));
+          pathIndices.push(is_left);
+        }
+      }
+
+      const nulliferR = CryptoHelper.generateAndPrepareRand(nullifer);
+      const secretR = CryptoHelper.generateAndPrepareRand(secret);
+      const circuit_output = await run_circuit({
         root,
         nullifier: nulliferR.num,
         secret: secretR.num,
@@ -229,15 +238,15 @@ async function withdraw_merkle() {
         recipient,
         pathElements,
         pathIndices,
-    });
+      });
 
-    const proof = Array.from(
-        ZkHelper.convertProofToBytes(circuit_output.proof as any)
-    );
-    const nullifierHash = CryptoHelper.hash(
-        CryptoHelper.numberArrayToU8IntArray(nulliferR.u8Array)
-    );
-    const instruction = await buildWithdrawTransactionInstruction({
+      const proof = Array.from(
+        ZkHelper.convertProofToBytes(circuit_output.proof as any),
+      );
+      const nullifierHash = CryptoHelper.hash(
+        CryptoHelper.numberArrayToU8IntArray(nulliferR.u8Array),
+      );
+      const instruction = await buildWithdrawTransactionInstruction({
         connection,
         signer: publicKey,
         nullifierHash,
@@ -246,89 +255,113 @@ async function withdraw_merkle() {
         depth,
         recipient,
         mint: new PublicKey(sendFormState.selectedToken.address),
-    });
-    const tx = new Transaction();
-    tx.add(modifyComputeUnits)
-    tx.add(instruction);
-    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-    tx.feePayer = publicKey;
-    const txSendHash = await sendTransaction(tx, connection, {skipPreflight: true});
-    setIsLoading(false);
-    addToast({
-      title: "Send successful",
-      color: "success",
-      endContent: (
-        <div className="ms-11 my-2 flex gap-x-2">
-          <Button color={"primary"} size="sm" variant="bordered" onPress={() => window.open(`https://solscan.io/tx/${txSendHash}?cluster=${process.env.SOLANA_NETWORK}`, '_blank')}>
-            View tx 
-          </Button>
-        </div>
-      )
-    })
-    console.log('withdraw_merkle', txSendHash)
-  } catch (error: any) {
-    console.error('Error in withdraw_merkle:', error);
-    addToast({
-      title: "Send failed",
-      color: "danger",
-      description: error.message
-    })
-    setIsLoading(false);
-  } finally {
-    setIsLoading(false);
+      });
+      const tx = new Transaction();
+      tx.add(modifyComputeUnits);
+      tx.add(instruction);
+      tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      tx.feePayer = publicKey;
+      const txSendHash = await sendTransaction(tx, connection, {
+        skipPreflight: true,
+      });
+      setIsLoading(false);
+      addToast({
+        title: "Send successful",
+        color: "success",
+        endContent: (
+          <div className="ms-11 my-2 flex gap-x-2">
+            <Button
+              color={"primary"}
+              size="sm"
+              variant="bordered"
+              onPress={() =>
+                window.open(
+                  `https://solscan.io/tx/${txSendHash}?cluster=${process.env.SOLANA_NETWORK}`,
+                  "_blank",
+                )
+              }
+            >
+              View tx
+            </Button>
+          </div>
+        ),
+      });
+      console.log("withdraw_merkle", txSendHash);
+    } catch (error: any) {
+      console.error("Error in withdraw_merkle:", error);
+      addToast({
+        title: "Send failed",
+        color: "danger",
+        description: error.message,
+      });
+      setIsLoading(false);
+    } finally {
+      setIsLoading(false);
+    }
   }
-}
+
   return (
     <Card className="w-full mx-auto p-4 w-[450px]">
       <div className="space-y-4">
         {/* Send Amount Section */}
         <div>
-
-
           {/* Token Selection Card */}
           <Card className="p-3">
             <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-                <TokenDropdown 
-                  tokens={tokens} 
-                  selectedToken={sendFormState.selectedToken} 
-                  onTokenChange={onTokenChange} 
+              <div className="flex items-center gap-2">
+                <TokenDropdown
+                  tokens={tokens}
+                  selectedToken={sendFormState.selectedToken}
+                  onTokenChange={onTokenChange}
                 />
               </div>
               <Input
                 value={sendFormState.amount.toString()}
-                onChange={(e) => setSendFormState(prev => ({ ...prev, amount: parseFloat(e.target.value) }))}
+                onChange={(e) =>
+                  setSendFormState((prev) => ({
+                    ...prev,
+                    amount: parseFloat(e.target.value),
+                  }))
+                }
                 placeholder="0.00"
-                style={{ textAlign: 'right' }}
+                style={{ textAlign: "right" }}
                 className="w-full/2 bg-transparent text-right border-none focus:ring-0 text-lg font-medium"
               />
-    
             </div>
           </Card>
         </div>
 
         {/* ZKProof Section */}
         <div>
-          <span className="text-sm text-gray-600 mb-2 block">ZKProof (format: secret-nullifier-index)</span>
-          <Input 
+          <span className="text-sm text-gray-600 mb-2 block">
+            ZKProof (format: secret-nullifier-index)
+          </span>
+          <Input
             placeholder="Paste your ZKProof here"
             className="w-full"
             value={zkProofInput}
             onChange={(e) => handleZkProofInput(e.target.value)}
           />
-          {zkProofInput && zkProofInput.split('-').length !== 3 && (
-            <p className="text-xs text-red-500 mt-1">Invalid format. Please use the format: secret-nullifier-index</p>
+          {zkProofInput && zkProofInput.split("-").length !== 3 && (
+            <p className="text-xs text-red-500 mt-1">
+              Invalid format. Please use the format: secret-nullifier-index
+            </p>
           )}
         </div>
 
         {/* Receiver Section */}
         <div>
           <span className="text-sm text-gray-600 mb-2 block">Receiver</span>
-          <Input 
+          <Input
             placeholder="receiver address"
             className="w-full"
             value={sendFormState.receiverAddress}
-            onChange={(e) => setSendFormState(prev => ({ ...prev, receiverAddress: e.target.value }))}
+            onChange={(e) =>
+              setSendFormState((prev) => ({
+                ...prev,
+                receiverAddress: e.target.value,
+              }))
+            }
           />
         </div>
 
@@ -345,16 +378,16 @@ async function withdraw_merkle() {
 
         {/* Send Button */}
         <WalletGuard>
-        <Button 
-          onPress={() => withdraw_merkle()}
-          color='primary'
-          className="w-full text-white"
-          size="lg"
-          isLoading={isLoading}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Processing...' : 'Send'}
-        </Button>
+          <Button
+            onPress={() => withdraw_merkle()}
+            color="primary"
+            className="w-full text-white"
+            size="lg"
+            isLoading={isLoading}
+            disabled={isLoading}
+          >
+            {isLoading ? "Processing..." : "Send"}
+          </Button>
         </WalletGuard>
       </div>
     </Card>

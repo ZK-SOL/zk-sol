@@ -12,6 +12,7 @@ import {
   MerkleNodeSeed,
   MerklePendingProofSeed,
   MerkleSeed,
+  MerkleTokenSeed,
   MerkleZerosSeed,
   NullifierHashSeed,
 } from "../constants/seeds";
@@ -47,7 +48,7 @@ export function getMerkleTokenAddress(
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [
-      Buffer.from(anchor.utils.bytes.utf8.encode(MerkleSeed)),
+      Buffer.from(anchor.utils.bytes.utf8.encode(MerkleTokenSeed)),
       mint.toBuffer(),
       new BN(depth).toBuffer("le", 8),
     ],

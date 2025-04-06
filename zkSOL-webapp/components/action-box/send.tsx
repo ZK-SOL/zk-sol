@@ -48,9 +48,9 @@ const Send: React.FC = () => {
     receiverAddress: string;
   }>({
     selectedToken: null,
-    secret: 6,
-    nullifer: 6,
-    index: 6,
+    secret: 10,
+    nullifer: 10,
+    index: 0,
     amount: 0,
     receiverAddress: '',
   });
@@ -72,7 +72,7 @@ const Send: React.FC = () => {
   },
   {
     chainId: 101,
-    address: "4otg1HCdA1NozTX6Teh9qQzSsSeTnwSCLaFvSH4hbu",
+    address: "4otg1HCdA1NozTX6Teh9qQzSsSeTnwSCLaFvSH4hbuCz",
     symbol: "testSOL",
     name: "testSOL",
     decimals: 9,
@@ -118,13 +118,13 @@ const Send: React.FC = () => {
 // Handle ZKProof input
 const handleZkProofInput = (value: string) => {
   setZkProofInput(value);
-  
+  console.log('value', value)
   // Split the input by "-" to extract secret, nullifier, and index
   const parts = value.split('-');
   
   if (parts.length === 3) {
-    const [secret, nullifer, index] = parts;
-    
+    const [index, nullifer, secret] = parts;
+    console.log('secret', secret, 'nullifer', nullifer, 'index', index)
     // Update the form state with the parsed values
     setSendFormState(prev => ({
       ...prev,
@@ -132,6 +132,7 @@ const handleZkProofInput = (value: string) => {
       nullifer: parseInt(nullifer, 10) || prev.nullifer,
       index: parseInt(index, 10) || prev.index
     }));
+    console.log('sendFormState', sendFormState)
   }
 };
 
@@ -141,12 +142,18 @@ useEffect(() => {
   if (!sendFormState.selectedToken) {
     return;
   }
-  const [merkle] = getMerkleAddress(depth, new PublicKey(sendFormState.selectedToken.address));
-  const [merkleZeros] = getMerkleZerosAddress(depth, new PublicKey(sendFormState.selectedToken.address));
-  setMerkleAddress(merkle)
-  setMerkleZeros(merkleZeros)
-  setCircuitName(`withdraw${depth}`)
-}, [depth, sendFormState.selectedToken])
+
+  try {
+    const [merkle] = getMerkleAddress(depth, new PublicKey(sendFormState.selectedToken.address));
+    const [merkleZeros] = getMerkleZerosAddress(depth, new PublicKey(sendFormState.selectedToken.address));
+    setMerkleAddress(merkle)
+    setMerkleZeros(merkleZeros)
+    setCircuitName(`withdraw${depth}`)
+    console.log('my merkle', merkle.toBase58(), merkleZeros.toBase58())
+  } catch (error) {
+    console.error('Error in useEffect:', error);
+  }
+}, [depth, sendFormState])
 
  // Handle token selection
  const onTokenChange = (token: Token) => {
@@ -156,12 +163,12 @@ useEffect(() => {
 async function withdraw_merkle() {
   try {
     setIsLoading(true);
+    debugger;
     const recipient = new PublicKey(sendFormState.receiverAddress);
     let nullifer = sendFormState.nullifer;
     let secret = sendFormState.secret;
     let index = sendFormState.index;
-
-    console.log(sendFormState)
+    console.log('formstate', sendFormState)
     if (!publicKey) {
         alert("Connect wallet first")
         return

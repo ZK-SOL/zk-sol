@@ -65,9 +65,8 @@ const TokenDropdown: React.FC<TokenDropdownProps> = ({ tokens, selectedToken, on
         selectedKeys={selectedToken ? [selectedToken.symbol] : []}
         selectionMode="single"
         onSelectionChange={(keys) => {
-          console.log('Dropdown selection changed:', Array.from(keys));
           const selected = tokens.find(token => token.address === Array.from(keys)[0]);
-          console.log('Found token:', selected);
+
           if (selected) {
             console.log('Calling onTokenChange with:', selected);
             onTokenChange(selected);

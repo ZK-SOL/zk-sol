@@ -51,9 +51,7 @@ export const ChevronDownIcon = () => {
 
 // Move these outside the component to avoid recreating on each render
 const LAMPORTS_PER_SOL_DECIMAL = LAMPORTS_PER_SOL;
-const handleButtonClick = (balance: number, size: "half" | "max") => {
-  return size === "half" ? (balance / 2).toString() : balance.toString();
-};
+
 
 // Helper function to create SOL token
 const createSolToken = (balance: number): Token => ({
@@ -93,14 +91,12 @@ const Deposit: React.FC = () => {
     selectedToken: Token | null;
     secret: number;
     nullifer: number;
-    index: number;
     amount: number;
   }>({
     selectedToken: null,
     secret: 10,
     nullifer: 10,
-    index: 10,
-    amount: 0,
+    amount: 1,
   });
 
   // Token state
@@ -111,17 +107,16 @@ const Deposit: React.FC = () => {
   const [merkleZeros, setMerkleZeros] = useState<PublicKey>();
   const [index, setIndex] = useState<number>();
 
-  // Debug logging
-  useEffect(() => {
-    console.log("Current tokens state:", tokens);
-    console.log("Deposit form state:", depositFormState);
-  }, [tokens, depositFormState]);
 
-  // Log when selectedToken changes
-  useEffect(() => {
-    console.log("Selected token changed:", depositFormState.selectedToken);
-  }, [depositFormState.selectedToken]);
 
+  const getMerkleAccount1 = async () => {
+    if (!depositFormState.selectedToken?.address) {
+      alert("No token selected");
+      return;
+    }
+    const merkle = await getMerkleAccount(connection, depth, new PublicKey(depositFormState.selectedToken.address));
+    return Number(merkle.nextIndex) - 1
+  }
   // Fetch tokens from API
   const fetchTokens = useCallback(async () => {
     if (!publicKey) {
@@ -222,10 +217,10 @@ const Deposit: React.FC = () => {
   };
 
   // Handle HALF/MAX button clicks
-  const handleTokenButtonClick = (size: "half" | "max") => {
-    if (!depositFormState.selectedToken?.balance) return "0";
-    return handleButtonClick(depositFormState.selectedToken.balance, size);
-  };
+  // const handleTokenButtonClick = (size: "half" | "max") => {
+  //   if (!depositFormState.selectedToken?.balance) return "0";
+  //   return handleButtonClick(depositFormState.selectedToken.balance, size);
+  // };
 
   // Create merkle tree
   async function create_merkle() {
@@ -235,7 +230,7 @@ const Deposit: React.FC = () => {
         return;
       }
 
-      if (!depositFormState.selectedToken?.mint) {
+      if (!depositFormState.selectedToken?.address) {
         alert("No token selected");
         return;
       }
@@ -244,7 +239,7 @@ const Deposit: React.FC = () => {
         signer: publicKey,
         depth,
         depositSize: LAMPORTS_PER_SOL,
-        mint: new PublicKey(depositFormState.selectedToken.mint),
+        mint: new PublicKey(depositFormState.selectedToken.address),
       });
 
       const tx = new Transaction();
@@ -270,7 +265,7 @@ const Deposit: React.FC = () => {
       // @ts-ignore
       window["x"] = x;
       setIsLoading(true);
-      const { nullifer, secret, index } = depositFormState;
+      const { nullifer, secret } = depositFormState;
 
       if (!publicKey) {
         alert("Connect wallet first");
@@ -289,7 +284,7 @@ const Deposit: React.FC = () => {
 
       console.log("deposit_merkle", depositFormState);
  
-      if (!depositFormState.selectedToken?.mint) {
+      if (!depositFormState.selectedToken?.address) {
         alert("No token selected");
         return;
       }
@@ -308,7 +303,7 @@ const Deposit: React.FC = () => {
         input: commitmentBytes,
         depth,
         connection,
-        mint: new PublicKey(depositFormState.selectedToken?.mint),
+        mint: new PublicKey(depositFormState.selectedToken?.address),
       });
 
       const tx = new Transaction();
@@ -324,8 +319,15 @@ const Deposit: React.FC = () => {
         skipPreflight: true,
       });
       setIsLoading(false);
-
+      // await confirmation
+     const status = await connection.confirmTransaction({
+        signature: txDepositHash,
+        ...(await connection.getLatestBlockhash()),
+      });
+      console.log("status", status)
+       
       // Set proof data and show proof section
+      const index = await getMerkleAccount1() as number
       setProofData({
         index: index,
         secret: secret,
@@ -378,7 +380,7 @@ const Deposit: React.FC = () => {
                 Balance: {depositFormState.selectedToken?.balance}{" "}
                 {depositFormState.selectedToken?.symbol}
               </span>
-              <div className="flex items-center gap-2">
+              {/* <div className="flex items-center gap-2">
                 <Button
                   variant="flat"
                   size="sm"
@@ -403,7 +405,7 @@ const Deposit: React.FC = () => {
                 >
                   MAX
                 </Button>
-              </div>
+              </div> */}
             </div>
 
             {/* Token Selection Card */}
@@ -417,6 +419,8 @@ const Deposit: React.FC = () => {
                   />
                 </div>
                 <Input
+                  min={1}
+                  max={1}
                   value={depositFormState.amount.toString()}
                   onChange={(e) =>
                     setDepositFormState((prev) => ({
@@ -440,6 +444,25 @@ const Deposit: React.FC = () => {
             Deposit {depositFormState.selectedToken?.symbol} to your private
             vault
           </div>
+
+
+
+          {/* Send Button */}
+          <div className="w-full">
+            <WalletGuard>
+              <Button
+                color="primary"
+                className="w-full  my-2 text-white"
+                size="lg"
+                onPress={() => create_merkle()}
+                isLoading={isLoading}
+                disabled={isLoading}
+              >
+                {isLoading ? "Processing..." : "Create Merkle"}
+              </Button>
+            </WalletGuard>
+          </div>
+
 
           {/* Send Button */}
           <div className="w-full">

@@ -288,6 +288,11 @@ const Deposit: React.FC = () => {
       }
 
       console.log("deposit_merkle", depositFormState);
+ 
+      if (!depositFormState.selectedToken?.mint) {
+        alert("No token selected");
+        return;
+      }
 
       const nulliferR = CryptoHelper.generateAndPrepareRand(nullifer);
       const secretR = CryptoHelper.generateAndPrepareRand(secret);
@@ -303,6 +308,7 @@ const Deposit: React.FC = () => {
         input: commitmentBytes,
         depth,
         connection,
+        mint: new PublicKey(depositFormState.selectedToken?.mint),
       });
 
       const tx = new Transaction();

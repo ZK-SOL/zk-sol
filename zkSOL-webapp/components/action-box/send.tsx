@@ -72,28 +72,42 @@ const Send: React.FC = () => {
   },
   {
     chainId: 101,
-    address: "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
-    symbol: "JitoSOL",
-    name: "Jito Staked SOL",
+    address: "4otg1HCdA1NozTX6Teh9qQzSsSeTnwSCLaFvSH4hbu",
+    symbol: "testSOL",
+    name: "testSOL",
     decimals: 9,
-    logoURI: "https://storage.googleapis.com/token-metadata/JitoSOL-256.png",
+    logoURI: "https://api.phantom.app/image-proxy/?image=https%3A%2F%2Fbafkreicp5rcho64icssijsuaexo5nfum6nf4anz4gy5dga6sjl4bp7kp3e.ipfs.nftstorage.link&anim=true&fit=cover&width=128&height=128",
     tags: [
         "community",
         "lst",
         "strict",
         "verified"
     ],
-
-  },
-  {
-    chainId: 101,
-    address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    decimals: 6,
-    logoURI: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
-    name: "USD Coin",
-    symbol: "USDC",
-
   }
+  // {
+  //   chainId: 101,
+  //   address: "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
+  //   symbol: "JitoSOL",
+  //   name: "Jito Staked SOL",
+  //   decimals: 9,
+  //   logoURI: "https://storage.googleapis.com/token-metadata/JitoSOL-256.png",
+  //   tags: [
+  //       "community",
+  //       "lst",
+  //       "strict",
+  //       "verified"
+  //   ],
+
+  // },
+  // {
+  //   chainId: 101,
+  //   address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  //   decimals: 6,
+  //   logoURI: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+  //   name: "USD Coin",
+  //   symbol: "USDC",
+
+  // }
 
 ]);
 
@@ -124,12 +138,15 @@ const handleZkProofInput = (value: string) => {
 
 
 useEffect(() => {
-  const [merkle] = getMerkleAddress(depth);
-  const [merkleZeros] = getMerkleZerosAddress(depth)
+  if (!sendFormState.selectedToken) {
+    return;
+  }
+  const [merkle] = getMerkleAddress(depth, new PublicKey(sendFormState.selectedToken.address));
+  const [merkleZeros] = getMerkleZerosAddress(depth, new PublicKey(sendFormState.selectedToken.address));
   setMerkleAddress(merkle)
   setMerkleZeros(merkleZeros)
   setCircuitName(`withdraw${depth}`)
-}, [depth])
+}, [depth, sendFormState.selectedToken])
 
  // Handle token selection
  const onTokenChange = (token: Token) => {
@@ -169,9 +186,13 @@ async function withdraw_merkle() {
         alert("recipient and current wallet are the same")
         return
     }
+    if (!sendFormState.selectedToken) {
+        alert("missing token")
+        return
+    }
 
     const proof_path: GenerateProofPath = CryptoHelper.generate_proof_path(depth, index);
-    const merkle = await getMerkleAccount(connection, depth);
+    const merkle = await getMerkleAccount(connection, depth, new PublicKey(sendFormState.selectedToken.address));
     const root = CryptoHelper.numberArrayToBigInt(
         merkle.roots[merkle.currentRootIndex]
     );
@@ -217,6 +238,7 @@ async function withdraw_merkle() {
         proof,
         depth,
         recipient,
+        mint: new PublicKey(sendFormState.selectedToken.address),
     });
     const tx = new Transaction();
     tx.add(modifyComputeUnits)

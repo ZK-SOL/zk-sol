@@ -18,10 +18,14 @@ import {
 import BN from "bn.js";
 import { CryptoHelper } from "../crypto-helpers";
 
-export function getMerkleAddress(depth: number): [PublicKey, number] {
+export function getMerkleAddress(
+  depth: number,
+  mint: PublicKey
+): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [
       Buffer.from(anchor.utils.bytes.utf8.encode(MerkleSeed)),
+      mint.toBuffer(),
       new BN(depth).toBuffer("le", 8),
     ],
     PROGRAM_ID
@@ -30,9 +34,10 @@ export function getMerkleAddress(depth: number): [PublicKey, number] {
 
 export async function getMerkleAccount(
   connection: Connection,
-  depth: number
+  depth: number,
+  mint: PublicKey
 ): Promise<MerkleState> {
-  const [merkle] = getMerkleAddress(depth);
+  const [merkle] = getMerkleAddress(depth, mint);
   return await MerkleState.fromAccountAddress(connection, merkle);
 }
 
@@ -52,11 +57,13 @@ export function getMerkleTokenAddress(
 
 export function getMerklePendingProofAddress(
   depth: number,
-  index: number
+  index: number,
+  mint: PublicKey
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [
       Buffer.from(anchor.utils.bytes.utf8.encode(MerklePendingProofSeed)),
+      mint.toBuffer(),
       new BN(depth).toBuffer("le", 8),
       new BN(index).toBuffer("le", 8),
     ],
@@ -67,16 +74,21 @@ export function getMerklePendingProofAddress(
 export async function getMerklePendingProofAccount(
   connection: Connection,
   depth: number,
-  index: number
+  index: number,
+  mint: PublicKey
 ): Promise<MerklePendingProofState> {
-  const [leaf] = getMerklePendingProofAddress(depth, index);
+  const [leaf] = getMerklePendingProofAddress(depth, index, mint);
   return await MerklePendingProofState.fromAccountAddress(connection, leaf);
 }
 
-export function getMerkleZerosAddress(depth: number): [PublicKey, number] {
+export function getMerkleZerosAddress(
+  depth: number,
+  mint: PublicKey
+): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [
       Buffer.from(anchor.utils.bytes.utf8.encode(MerkleZerosSeed)),
+      mint.toBuffer(),
       new BN(depth).toBuffer("le", 8),
     ],
     PROGRAM_ID
@@ -85,9 +97,10 @@ export function getMerkleZerosAddress(depth: number): [PublicKey, number] {
 
 export async function getMerkleZerosAccount(
   connection: Connection,
-  depth: number
+  depth: number,
+  mint: PublicKey
 ): Promise<MerkleZeros> {
-  const [merkle] = getMerkleZerosAddress(depth);
+  const [merkle] = getMerkleZerosAddress(depth, mint);
   return await MerkleZeros.fromAccountAddress(connection, merkle);
 }
 

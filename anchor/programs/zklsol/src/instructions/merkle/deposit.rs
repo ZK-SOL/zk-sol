@@ -84,6 +84,7 @@ pub fn deposit(ctx: Context<DepositContext>, args: DepositArgs) -> Result<()> {
     let mut m = merkle.to_merkle_tree();
     let proof = m.insert(&args.input, &merkle_zeros)?;
     pending_proof.proof = proof;
+    pending_proof.mint = mint.key();
     merkle.number_of_deposits += 1;
     merkle.highest_pending_proof_index += 1;
     merkle.sync(m);

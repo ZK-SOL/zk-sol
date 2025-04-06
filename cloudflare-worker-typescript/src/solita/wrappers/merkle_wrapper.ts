@@ -202,6 +202,7 @@ export async function buildDumpProofTransactionInstructionsArray({
   const pendingProofs = await MerklePendingProofState.gpaBuilder()
     .addFilter("accountDiscriminator", merklePendingProofStateDiscriminator)
     .addFilter("depth", depth)
+    .addFilter("mint", mint)
     .run(connection);
   const sortedPendingProofs = pendingProofs
     .map((i) => {

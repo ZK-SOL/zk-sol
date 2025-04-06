@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-color: #2CAFBF;
+}
+.bg-gradient-pattern{
+  background-image: radial-gradient(circle at 0.5px 0.5px, var(--primary-color) 0.5px, transparent 0.5px);
+  background-size: 10px 10px;
+  width: 50%;
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  z-index: -1;
+}
+
+.bg-gradient-pattern-left{
+  background-image: radial-gradient(circle at 0.5px 0.5px, var(--primary-color) 0.5px, transparent 0.5px);
+  background-size: 10px 10px;
+  width: 50%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  z-index: -1;
+}
+
+.section-gradient {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.section-gradient:nth-child(odd) .bg-gradient-pattern-left {
+  display: none;
+}
+
+.section-gradient:nth-child(even) .bg-gradient-pattern {
+  display: none;
+}
+
+.wallet-adapter-button-trigger {
+  background-color: var(--primary-color) !important;
+  color: #fff !important;
+  border-radius: 0.5rem !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 14px !important;
+  font-size: 14px !important;
+}
+.wallet-adapter-button-start-icon{
+  filter:grayscale(1)
+}
+
+.wallet-adapter-button.wallet-adapter-button-trigger {
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
+.wallet-adapter-dropdown{
+  width: 100%;
+}

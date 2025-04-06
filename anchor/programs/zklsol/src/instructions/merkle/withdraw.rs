@@ -26,7 +26,7 @@ pub struct WithdrawContext<'info> {
     pub signer: Signer<'info>,
     #[account(mut,
     has_one = mint,
-    seeds = [MerkleState::SEED.as_bytes().as_ref(), merkle.depth.to_le_bytes().as_ref()],
+    seeds = [MerkleState::SEED.as_bytes().as_ref(), mint.key().as_ref(), merkle.depth.to_le_bytes().as_ref()],
     bump = merkle.bump
     )]
     pub merkle: Box<Account<'info, MerkleState>>,

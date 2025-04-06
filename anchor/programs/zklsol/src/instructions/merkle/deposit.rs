@@ -34,7 +34,7 @@ pub struct DepositContext<'info> {
     pub signer_token_account: Box<Account<'info, TokenAccount>>,
     #[account(mut,
     has_one = mint,
-    seeds = [MerkleState::SEED.as_bytes().as_ref(), merkle.depth.to_le_bytes().as_ref()],
+    seeds = [MerkleState::SEED.as_bytes().as_ref(), mint.key().as_ref(), merkle.depth.to_le_bytes().as_ref()],
     bump = merkle.bump
     )]
     pub merkle: Box<Account<'info, MerkleState>>,
@@ -47,12 +47,12 @@ pub struct DepositContext<'info> {
     )]
     pub merkle_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
-    seeds = [MerkleZeros::SEED.as_bytes().as_ref(), merkle.depth.to_le_bytes().as_ref()],
+    seeds = [MerkleZeros::SEED.as_bytes().as_ref(), mint.key().as_ref(), merkle.depth.to_le_bytes().as_ref()],
     bump = merkle_zeros.bump
     )]
     pub merkle_zeros: Box<Account<'info, MerkleZeros>>,
     #[account(init,
-    seeds = [MerklePendingProofState::SEED.as_bytes().as_ref(), merkle.depth.to_le_bytes().as_ref(), merkle.next_index.to_le_bytes().as_ref()],
+    seeds = [MerklePendingProofState::SEED.as_bytes().as_ref(), mint.key().as_ref(), merkle.depth.to_le_bytes().as_ref(), merkle.next_index.to_le_bytes().as_ref()],
     payer = signer,
     space = MerklePendingProofState::SIZE,
     bump

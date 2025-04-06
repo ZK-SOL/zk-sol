@@ -7,6 +7,7 @@ use crate::utils::{close_account, derive_discriminator, unsafe_clone_account_inf
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_lang::solana_program::log::sol_log;
+use anchor_spl::token::Mint;
 use std::collections::HashMap;
 
 #[derive(Accounts)]
@@ -14,12 +15,13 @@ pub struct DumpProof<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(mut,
-    seeds = [MerkleState::SEED.as_bytes().as_ref(), merkle.depth.to_le_bytes().as_ref()],
+    seeds = [MerkleState::SEED.as_bytes().as_ref(), mint.key().as_ref(), merkle.depth.to_le_bytes().as_ref()],
     bump = merkle.bump
     )]
     pub merkle: Box<Account<'info, MerkleState>>,
+    pub mint: Box<Account<'info, Mint>>,
     #[account(mut,
-    seeds = [MerklePendingProofState::SEED.as_bytes().as_ref(), merkle.depth.to_le_bytes().as_ref(),  pending_proof.index.to_le_bytes().as_ref()],
+    seeds = [MerklePendingProofState::SEED.as_bytes().as_ref(), mint.key().as_ref(), merkle.depth.to_le_bytes().as_ref(),  pending_proof.index.to_le_bytes().as_ref()],
     bump = pending_proof.bump
     )]
     pub pending_proof: Box<Account<'info, MerklePendingProofState>>,

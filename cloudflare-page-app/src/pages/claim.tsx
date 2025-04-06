@@ -66,10 +66,17 @@ const Claim = () => {
             alert("Connect wallet first")
             return
         }
+        if (!walletContextState.signAllTransactions) {
+            alert("missing walletContextState.signAllTransaction");
+            return
+        }
         if (!prompt("Are you sure?")) {
             return
         }
         const accounts = await connection.getProgramAccounts(PROGRAM_ID)
+        console.log("accounts.length", accounts.length)
+        const transactions: Transaction[] = [];
+        let counter = 0;
         for (const account of accounts.values()) {
             const close_pda_account = buildClosePdaAccountTransactionInstruction({
                 signer: walletContextState.publicKey,
@@ -79,14 +86,21 @@ const Claim = () => {
             tx.add(modifyComputeUnits)
             tx.add(close_pda_account);
             const block = await connection.getLatestBlockhash();
-            console.log("connection", connection.rpcEndpoint)
             tx.recentBlockhash = block.blockhash;
             tx.lastValidBlockHeight = block.lastValidBlockHeight;
             tx.feePayer = walletContextState.publicKey;
-            const txDespoitHash = await walletContextState.sendTransaction(tx, connection, {
-                skipPreflight: true,
-                preflightCommitment: "confirmed"
-            });
+            transactions.push(tx);
+            counter += 1;
+            console.log("counter = ", counter)
+        }
+        const signedTxns = await walletContextState.signAllTransactions(transactions);
+        for (const tx of signedTxns) {
+            const txDespoitHash = await connection.sendRawTransaction(
+                tx.serialize()
+                , {
+                    skipPreflight: true,
+                    preflightCommitment: "confirmed"
+                });
             console.log('clear_pda', txDespoitHash)
         }
     }

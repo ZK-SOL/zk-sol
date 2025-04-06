@@ -1,8 +1,12 @@
-import {Connection, PublicKey} from "@solana/web3.js";
+import {Connection, PublicKey, Transaction} from "@solana/web3.js";
 import {keypair} from "./keypair";
-import {buildDumpProofTransactionInstructionsArray} from "./solita/wrappers/merkle_wrapper";
+import {
+    buildClosePdaAccountTransactionInstruction,
+    buildDumpProofTransactionInstructionsArray
+} from "./solita/wrappers/merkle_wrapper";
 import {modifyComputeUnits, processTransaction} from "./solita/sol-helpers";
 import {NATIVE_MINT} from "@solana/spl-token";
+import {PROGRAM_ID} from "./solita";
 
 const DEVNET = "https://devnet.helius-rpc.com/?api-key=32c35600-ee87-4ba1-b348-7d41f9b1693c"
 const MAINNET = "https://mainnet.helius-rpc.com/?api-key=32c35600-ee87-4ba1-b348-7d41f9b1693c"
@@ -10,6 +14,41 @@ const MINTS = [
     new PublicKey("4otg1HCdA1NozTX6Teh9qQzSsSeTnwSCLaFvSH4hbuCz"),
     NATIVE_MINT
 ]
+
+async function close_all(network: string) {
+    console.log("starting run: network", network);
+    const connection = new Connection(network === "devnet" ? DEVNET : MAINNET);
+    const accounts = await connection.getProgramAccounts(PROGRAM_ID)
+    console.log("accounts.length", accounts.length)
+    const transactions: Transaction[] = [];
+    let counter = 0;
+    for (const account of accounts.values()) {
+        const close_pda_account = buildClosePdaAccountTransactionInstruction({
+            signer: keypair.publicKey,
+            account: account.pubkey
+        })
+        const tx = new Transaction();
+        tx.add(modifyComputeUnits)
+        tx.add(close_pda_account);
+        const block = await connection.getLatestBlockhash();
+        tx.recentBlockhash = block.blockhash;
+        tx.lastValidBlockHeight = block.lastValidBlockHeight;
+        tx.feePayer = keypair.publicKey;
+        tx.sign(keypair);
+        transactions.push(tx);
+        counter += 1;
+        console.log("counter = ", counter)
+    }
+    for (const tx of transactions) {
+        const txDespoitHash = await connection.sendRawTransaction(
+            tx.serialize()
+            , {
+                skipPreflight: true,
+                preflightCommitment: "confirmed"
+            });
+        console.log('clear_pda', txDespoitHash)
+    }
+}
 
 async function run(network: string, depth: number) {
     console.log("starting run: network", network, " | depth:", depth);
@@ -57,9 +96,17 @@ export default {
      */
     async fetch(request, env, ctx): Promise<Response> {
         const {searchParams} = new URL(request.url)
+        console.log("url", request.url)
+        console.log("searchParams", searchParams)
+        const closeAll = searchParams.get("closeAll") || false;
         const network = searchParams.get("network") || "devnet";
         const depth = parseInt(searchParams.get("depth") || "20");
-        await run(network, depth);
+        if (closeAll === "true") {
+            console.log("running close all")
+            await close_all(network)
+        } else {
+            await run(network, depth);
+        }
         return new Response(`Great success: ${keypair.publicKey.toBase58()}`);
     },
 

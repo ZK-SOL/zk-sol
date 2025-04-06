@@ -1,34 +1,47 @@
-import {Connection} from "@solana/web3.js";
+import {Connection, PublicKey} from "@solana/web3.js";
 import {keypair} from "./keypair";
 import {buildDumpProofTransactionInstructionsArray} from "./solita/wrappers/merkle_wrapper";
 import {modifyComputeUnits, processTransaction} from "./solita/sol-helpers";
+import {NATIVE_MINT} from "@solana/spl-token";
 
 const DEVNET = "https://devnet.helius-rpc.com/?api-key=32c35600-ee87-4ba1-b348-7d41f9b1693c"
 const MAINNET = "https://mainnet.helius-rpc.com/?api-key=32c35600-ee87-4ba1-b348-7d41f9b1693c"
+const MINTS = [
+    new PublicKey("4otg1HCdA1NozTX6Teh9qQzSsSeTnwSCLaFvSH4hbu"),
+    NATIVE_MINT
+]
 
 async function run(network: string, depth: number) {
+    console.log("starting run: network", network, " | depth:", depth);
     const connection = new Connection(network === "devnet" ? DEVNET : MAINNET);
-    const signer = keypair;
-    const instructions = await buildDumpProofTransactionInstructionsArray({
-        signer: keypair.publicKey,
-        connection: connection,
-        depth
-    })
-    console.log("instructions.length = ", instructions.length)
-    for (const instruction of instructions) {
-        const sig = await processTransaction(
-            [modifyComputeUnits, instruction],
-            connection,
-            signer,
-        )
-        if (sig) {
-            const txn = await connection.getParsedTransaction(
-                sig.Signature,
-                {
-                    commitment: 'confirmed',
-                    maxSupportedTransactionVersion: 0
+    for (const mint of MINTS) {
+        console.log("running on mint:", mint.toBase58())
+        const instructions = await buildDumpProofTransactionInstructionsArray({
+            signer: keypair.publicKey,
+            connection: connection,
+            depth,
+            mint
+        })
+        console.log("instructions.length:", instructions.length)
+        for (const instruction of instructions) {
+            try {
+                const sig = await processTransaction(
+                    [modifyComputeUnits, instruction],
+                    connection,
+                    keypair,
+                )
+                if (sig) {
+                    await connection.getParsedTransaction(
+                        sig.Signature,
+                        {
+                            commitment: 'confirmed',
+                            maxSupportedTransactionVersion: 0
+                        }
+                    )
                 }
-            )
+            } catch (error: any) {
+                console.error("run error: mint", mint.toBase58(), " error : ", error)
+            }
         }
     }
 }

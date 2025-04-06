@@ -48,8 +48,8 @@ export function getMerkleTokenAddress(
   return PublicKey.findProgramAddressSync(
     [
       Buffer.from(anchor.utils.bytes.utf8.encode(MerkleSeed)),
-      new BN(depth).toBuffer("le", 8),
       mint.toBuffer(),
+      new BN(depth).toBuffer("le", 8),
     ],
     PROGRAM_ID
   );

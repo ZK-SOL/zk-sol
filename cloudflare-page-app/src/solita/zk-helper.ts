@@ -35,9 +35,8 @@ export async function run_circuit({
                                       pathElements,
                                       pathIndices
                                   }: PrepCommitmentInputs) {
-    const circuit_wasm = `/${circuit_name}.wasm`;
-    const circuit_zkey = `/${circuit_name}_final.zkey`;
-    console.log("circuit_wasm", circuit_wasm)
+    const circuit_wasm = `./circuits-output/${circuit_name}/${circuit_name}_js/${circuit_name}.wasm`;
+    const circuit_zkey = `./circuits-output/${circuit_name}/${circuit_name}_final.zkey`;
     const nullifierU8Array = CryptoHelper.reverseUint8Array(CryptoHelper.numberToUint8Array(nullifier));
     const secretU8Array = CryptoHelper.reverseUint8Array(CryptoHelper.numberToUint8Array(secret));
     const nullifierMod = CryptoHelper.modInput(nullifierU8Array);
@@ -62,12 +61,10 @@ export async function run_circuit({
         pathIndices: pathIndices,  // 0 means we're on the left at each level
         recipient: recipientNum.bigInt
     };
-    console.log("here 64")
     let {
         proof,
         publicSignals
     } = await snarkjs.groth16.fullProve(input_node, circuit_wasm, circuit_zkey);
-    console.log("here 69")
     publicSignals = unstringifyBigInts(publicSignals);
     const publicSignalsBuffer_0 = CryptoHelper.to32ByteBuffer(BigInt(publicSignals[0]));
     let public_signal_0_u8_array_0 = Array.from(publicSignalsBuffer_0);

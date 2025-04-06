@@ -71,6 +71,7 @@ pub struct MerklePendingProofState {
     pub bump: u8,
     pub depth: u64,
     pub index: u64,
+    pub mint: Pubkey,
     pub proof: MerkleProof,
 }
 
@@ -88,6 +89,8 @@ impl MerklePendingProofState {
     // data
     32 +
     // owner
+    32 +
+    // mint
     32 +
     // proof path
     MerkleProof::SIZE;

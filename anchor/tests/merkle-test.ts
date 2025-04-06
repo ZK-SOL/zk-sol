@@ -93,6 +93,7 @@ describe("ZKL-$SOL - merkle test", () => {
         input: commitmentBytes,
         depth,
         connection: program.provider.connection,
+        mint: NATIVE_MINT,
       });
 
       const sig = await processTransaction(
@@ -116,6 +117,7 @@ describe("ZKL-$SOL - merkle test", () => {
         signer: signer.publicKey,
         connection: program.provider.connection,
         depth,
+        mint: NATIVE_MINT,
       });
       for (const instruction of instructions) {
         const sig = await processTransaction(
@@ -145,7 +147,11 @@ describe("ZKL-$SOL - merkle test", () => {
         depth,
         j
       );
-      const merkle = await getMerkleAccount(program.provider.connection, depth);
+      const merkle = await getMerkleAccount(
+        program.provider.connection,
+        depth,
+        NATIVE_MINT
+      );
       const root = CryptoHelper.numberArrayToBigInt(
         merkle.roots[merkle.currentRootIndex]
       );
@@ -182,6 +188,7 @@ describe("ZKL-$SOL - merkle test", () => {
         CryptoHelper.numberArrayToU8IntArray(nullifer.u8Array)
       );
       const instruction = await buildWithdrawTransactionInstruction({
+        mint: NATIVE_MINT,
         connection: program.provider.connection,
         signer: anonSigner.publicKey,
         nullifierHash,

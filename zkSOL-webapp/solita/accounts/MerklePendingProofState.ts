@@ -19,6 +19,7 @@ export type MerklePendingProofStateArgs = {
   bump: number
   depth: beet.bignum
   index: beet.bignum
+  mint: web3.PublicKey
   proof: MerkleProof
 }
 
@@ -37,6 +38,7 @@ export class MerklePendingProofState implements MerklePendingProofStateArgs {
     readonly bump: number,
     readonly depth: beet.bignum,
     readonly index: beet.bignum,
+    readonly mint: web3.PublicKey,
     readonly proof: MerkleProof
   ) {}
 
@@ -48,6 +50,7 @@ export class MerklePendingProofState implements MerklePendingProofStateArgs {
       args.bump,
       args.depth,
       args.index,
+      args.mint,
       args.proof
     )
   }
@@ -188,6 +191,7 @@ export class MerklePendingProofState implements MerklePendingProofStateArgs {
         }
         return x
       })(),
+      mint: this.mint.toBase58(),
       proof: this.proof,
     }
   }
@@ -208,6 +212,7 @@ export const merklePendingProofStateBeet = new beet.FixableBeetStruct<
     ['bump', beet.u8],
     ['depth', beet.u64],
     ['index', beet.u64],
+    ['mint', beetSolana.publicKey],
     ['proof', merkleProofBeet],
   ],
   MerklePendingProofState.fromArgs,

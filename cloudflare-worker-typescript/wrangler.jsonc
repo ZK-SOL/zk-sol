@@ -11,12 +11,12 @@
     "nodejs_compat"
   ],
   "migrations": [
-    {
-      "tag": "v2",
-      "deleted_classes": [
-        "MyDurableObject"
-      ]
-    }
+    //    {
+    //      "tag": "v2",
+    //      "deleted_classes": [
+    //        "MyDurableObject"
+    //      ]
+    //    }
   ],
   "assets": {
     "binding": "ASSETS",

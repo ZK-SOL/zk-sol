@@ -126,8 +126,7 @@ const Send: React.FC = () => {
     if (parts.length === 3) {
       // Correct order: secret-nullifier-index
       const [index, nullifier, secret] = parts;
-      console.log("secret", secret, "nullifier", nullifier, "index", index);
-      
+
       // Update the form state with the parsed values
       setSendFormState((prev: any) => {
         const newState = {
@@ -137,7 +136,6 @@ const Send: React.FC = () => {
           index: Number(index),
         };
         // Log the new state inside the callback to see the updated values
-        console.log("Updated sendFormState:", newState);
         return newState;
       });
     }
@@ -178,7 +176,6 @@ const Send: React.FC = () => {
       let nullifier = sendFormState.nullifier;
       let secret = sendFormState.secret;
       let index = sendFormState.index;
-      console.log("formstate", sendFormState);
       if (!publicKey) {
         alert("Connect wallet first");
         return;
@@ -290,7 +287,7 @@ const Send: React.FC = () => {
           </div>
         ),
       });
-      console.log("withdraw_merkle", txSendHash);
+
     } catch (error: any) {
       console.error("Error in withdraw_merkle:", error);
       addToast({

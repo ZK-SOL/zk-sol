@@ -125,7 +125,6 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
   // Initialize local state from parent state if available
   useEffect(() => {
     if (parentDepositState) {
-      console.log("Initializing local state from parent:", parentDepositState);
       setDepositFormState(prev => ({
         ...prev,
         secret: parentDepositState.secret || null,
@@ -142,7 +141,6 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
   // Update parent state when local state changes
   useEffect(() => {
     if (setParentDepositState) {
-      console.log("Updating parent state with local state:", depositFormState);
       // Only update parent state if we have valid values
       if (depositFormState.secret && depositFormState.nullifier) {
         setParentDepositState({
@@ -270,26 +268,23 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
       setIsLoading(true);
       
       // Generate random values only if they haven't been generated yet
-      if (randomValuesRef.current.secret === null || randomValuesRef.current.nullifier === null) {
+
         randomValuesRef.current.secret = Math.floor(Math.random() * 1000) + 1;
         randomValuesRef.current.nullifier = Math.floor(Math.random() * 1000) + 1;
         console.log("Generated new random values:", randomValuesRef.current);
-      } else {
-        console.log("Using existing random values:", randomValuesRef.current);
-      }
-      
+ 
       const randomSecret = randomValuesRef.current.secret;
       const randomNullifier = randomValuesRef.current.nullifier;
 
       // Update the state with the random values
       setDepositFormState(prev => {
-        console.log("Previous state:", prev);
+  
         const newState = {
           ...prev,
           secret: randomSecret,
           nullifier: randomNullifier
         };
-        console.log("New state:", newState);
+       
         return newState;
       });
       
@@ -315,8 +310,7 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
         return;
       }
 
-      console.log("deposit_merkle", depositFormState);
- 
+
       if (!depositFormState.selectedToken?.address) {
         alert("No token selected");
         return;
@@ -356,7 +350,7 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
         signature: txDepositHash,
         ...(await connection.getLatestBlockhash()),
       });
-      console.log("status", status)
+  
       setIsLoading(false);
        
       // Set proof data and show proof section
@@ -371,7 +365,6 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
 
       // Update parent state directly after successful deposit
       if (setParentDepositState) {
-        console.log("Updating parent state after successful deposit");
         setParentDepositState({
           secret: randomSecret,
           nullifier: randomNullifier,
@@ -403,7 +396,8 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
         ),
       });
 
-      console.log("deposit_merkle", txDepositHash);
+   
+      
     } catch (error: any) {
       console.error("deposit_merkle", error);
       addToast({

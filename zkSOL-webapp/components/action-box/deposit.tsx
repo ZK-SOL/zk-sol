@@ -4,7 +4,7 @@ import { Button } from "@heroui/button";
 import { Card } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Image } from "@heroui/image";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import {
   LAMPORTS_PER_SOL,
@@ -70,11 +70,11 @@ const createSolToken = (balance: number): Token => ({
 });
 
 interface DepositProps {
-  depositState: DepositStateType;
-  setDepositState: React.Dispatch<React.SetStateAction<DepositStateType>>;
+  depositState?: DepositStateType;
+  setDepositState?: (state: DepositStateType) => void;
 }
 
-const Deposit: React.FC<DepositProps> = ({ depositState, setDepositState }) => {
+const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, setDepositState: setParentDepositState }) => {
   const [isLoading, setIsLoading] = useState(false);
   const {
     connected,
@@ -85,20 +85,24 @@ const Deposit: React.FC<DepositProps> = ({ depositState, setDepositState }) => {
     sendAllTransactions,
   }: any = useWallet();
   const { connection } = useConnection();
-  const [showProof, setShowProof] = useState(depositState.showProof || false);
-  const [proofData, setProofData] = useState(depositState.proofData || null);
+  const [showProof, setShowProof] = useState(false);
+  const [proofData, setProofData] = useState<{
+    index: number;
+    secret: number;
+    nullifier: number;
+  } | null>(null);
 
   // Combine related state
   const [depositFormState, setDepositFormState] = useState<{
     selectedToken: Token | null;
-    secret: number;
-    nullifier: number;
+    secret: number | null;
+    nullifier: number | null;
     amount: number;
   }>({
     selectedToken: null,
-    secret: depositState.secret || 10,
-    nullifier: depositState.nullifier || 10,
-    amount: depositState.amount || 1,
+    secret: null,
+    nullifier: null,
+    amount: 1,
   });
 
   // Token state
@@ -109,17 +113,48 @@ const Deposit: React.FC<DepositProps> = ({ depositState, setDepositState }) => {
   const [merkleZeros, setMerkleZeros] = useState<PublicKey>();
   const [index, setIndex] = useState<number>();
 
+  // Add refs to store random values
+  const randomValuesRef = useRef<{
+    secret: number | null;
+    nullifier: number | null;
+  }>({
+    secret: null,
+    nullifier: null
+  });
+
+  // Initialize local state from parent state if available
+  useEffect(() => {
+    if (parentDepositState) {
+      console.log("Initializing local state from parent:", parentDepositState);
+      setDepositFormState(prev => ({
+        ...prev,
+        secret: parentDepositState.secret || null,
+        nullifier: parentDepositState.nullifier || null,
+        amount: parentDepositState.amount || 1,
+      }));
+      setShowProof(parentDepositState.showProof || false);
+      if (parentDepositState.proofData) {
+        setProofData(parentDepositState.proofData);
+      }
+    }
+  }, [parentDepositState]);
+
   // Update parent state when local state changes
   useEffect(() => {
-    setDepositState(prev => ({
-      ...prev,
-      secret: depositFormState.secret,
-      nullifier: depositFormState.nullifier,
-      amount: depositFormState.amount,
-      showProof: showProof,
-      proofData: proofData
-    }));
-  }, [depositFormState.secret, depositFormState.nullifier, depositFormState.amount, showProof, proofData, setDepositState]);
+    if (setParentDepositState) {
+      console.log("Updating parent state with local state:", depositFormState);
+      // Only update parent state if we have valid values
+      if (depositFormState.secret && depositFormState.nullifier) {
+        setParentDepositState({
+          secret: depositFormState.secret,
+          nullifier: depositFormState.nullifier,
+          amount: depositFormState.amount,
+          showProof,
+          proofData: proofData || undefined,
+        });
+      }
+    }
+  }, [depositFormState, showProof, proofData, setParentDepositState]);
 
   const getMerkleAccount1 = async () => {
     if (!depositFormState.selectedToken?.address) {
@@ -228,62 +263,41 @@ const Deposit: React.FC<DepositProps> = ({ depositState, setDepositState }) => {
     });
   };
 
-  // Create merkle tree
-  async function create_merkle() {
-    try {
-      if (!publicKey) {
-        alert("Connect wallet first");
-        return;
-      }
-
-      if (!depositFormState.selectedToken?.address) {
-        alert("No token selected");
-        return;
-      }
-
-      const instruction = buildCreateMerkleTransactionInstruction({
-        signer: publicKey,
-        depth,
-        depositSize: LAMPORTS_PER_SOL,
-        mint: new PublicKey(depositFormState.selectedToken.address),
-      });
-
-      const tx = new Transaction();
-      tx.add(modifyComputeUnits);
-      tx.add(instruction);
-      tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-      tx.feePayer = publicKey;
-
-      const txDepositHash = await sendTransaction(tx, connection, {
-        skipPreflight: true,
-      });
-      console.log("create_merkle", txDepositHash);
-    } catch (error: any) {
-      console.error("create_merkle", error);
-    }
-  }
 
   // Deposit to merkle tree
   async function deposit_merkle() {
     try {
-      console.log("BUFFER TEST", Buffer.from("test"));
-      const x = Buffer.from("test");
-      // @ts-ignore
-      window["x"] = x;
       setIsLoading(true);
       
-      // Generate random strings and convert them to numbers
-      const randomSecret = Math.floor(Math.random() * 1000) + 1;
-      const randomNullifier = Math.floor(Math.random() * 1000) + 1;
+      // Generate random values only if they haven't been generated yet
+      if (randomValuesRef.current.secret === null || randomValuesRef.current.nullifier === null) {
+        randomValuesRef.current.secret = Math.floor(Math.random() * 1000) + 1;
+        randomValuesRef.current.nullifier = Math.floor(Math.random() * 1000) + 1;
+        console.log("Generated new random values:", randomValuesRef.current);
+      } else {
+        console.log("Using existing random values:", randomValuesRef.current);
+      }
+      
+      const randomSecret = randomValuesRef.current.secret;
+      const randomNullifier = randomValuesRef.current.nullifier;
 
       // Update the state with the random values
-      setDepositFormState(prev => ({
-        ...prev,
-        secret: randomSecret,
-        nullifier: randomNullifier
-      }));
+      setDepositFormState(prev => {
+        console.log("Previous state:", prev);
+        const newState = {
+          ...prev,
+          secret: randomSecret,
+          nullifier: randomNullifier
+        };
+        console.log("New state:", newState);
+        return newState;
+      });
       
-      const { nullifier, secret } = depositFormState;
+      // Use the random values directly
+      const nullifier = randomNullifier;
+      const secret = randomSecret;
+      
+      console.log("Using direct values:", { nullifier, secret });
 
       if (!publicKey) {
         alert("Connect wallet first");
@@ -291,7 +305,8 @@ const Deposit: React.FC<DepositProps> = ({ depositState, setDepositState }) => {
       }
 
       if (!nullifier) {
-        alert("missing nullifer");
+        console.error("Nullifier is missing:", nullifier);
+        alert("missing nullifier");
         return;
       }
 
@@ -307,9 +322,9 @@ const Deposit: React.FC<DepositProps> = ({ depositState, setDepositState }) => {
         return;
       }
 
-      const nulliferR = CryptoHelper.generateAndPrepareRand(nullifier);
+      const nullifierR = CryptoHelper.generateAndPrepareRand(nullifier);
       const secretR = CryptoHelper.generateAndPrepareRand(secret);
-      const nullifierNode = CryptoHelper.modInput(nulliferR.u8Array);
+      const nullifierNode = CryptoHelper.modInput(nullifierR.u8Array);
       const secretNode = CryptoHelper.modInput(secretR.u8Array);
       const commitmentBytes = CryptoHelper.from_children(
         nullifierNode,
@@ -346,12 +361,25 @@ const Deposit: React.FC<DepositProps> = ({ depositState, setDepositState }) => {
        
       // Set proof data and show proof section
       const index = await getMerkleAccount1() as number
-      setProofData({
+      const newProofData = {
         index: index,
         secret: randomSecret,
-        nullifer: randomNullifier,
-      });
+        nullifier: randomNullifier,
+      };
+      setProofData(newProofData);
       setShowProof(true);
+
+      // Update parent state directly after successful deposit
+      if (setParentDepositState) {
+        console.log("Updating parent state after successful deposit");
+        setParentDepositState({
+          secret: randomSecret,
+          nullifier: randomNullifier,
+          amount: depositFormState.amount,
+          showProof: true,
+          proofData: newProofData,
+        });
+      }
 
       addToast({
         title: "Deposit successful",
@@ -503,7 +531,7 @@ const Deposit: React.FC<DepositProps> = ({ depositState, setDepositState }) => {
                 </p>
                 <div className="bg-white p-2 rounded border border-gray-300 break-all">
                   <code className="text-sm font-mono">
-                    {`${proofData.index}-${proofData.secret}-${proofData.nullifer}`}
+                    {`${proofData.index}-${proofData.nullifier}-${proofData.secret}`}
                   </code>
                 </div>
               </div>

@@ -125,7 +125,7 @@ const Send: React.FC = () => {
 
     if (parts.length === 3) {
       // Correct order: secret-nullifier-index
-      const [index, secret, nullifier] = parts;
+      const [index, nullifier, secret] = parts;
       console.log("secret", secret, "nullifier", nullifier, "index", index);
       
       // Update the form state with the parsed values

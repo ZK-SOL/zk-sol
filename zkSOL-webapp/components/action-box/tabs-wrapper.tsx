@@ -19,8 +19,7 @@ const TabsWrapper: React.FC = () => {
       <Tabs aria-label="Transaction Options" isVertical={false}>
         <Tab key="deposit" title="Deposit">
           <Deposit 
-            depositState={depositState}
-            setDepositState={setDepositState}
+            
           />
         </Tab>
         <Tab key="send" title="Send">

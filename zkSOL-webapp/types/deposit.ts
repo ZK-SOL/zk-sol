@@ -4,9 +4,10 @@ export interface DepositStateType {
   nullifier?: number;
   amount?: number;
   showProof?: boolean;
+  index?: number;
   proofData?: {
     index: number;
     secret: number;
-    nullifer: number;
-  } | null;
+    nullifier: number;
+  };
 } 

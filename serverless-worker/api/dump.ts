@@ -17,36 +17,50 @@ const MINTS = [
 
 async function close_all(network: string) {
     console.log("starting run: network", network);
-    const connection = new Connection(network === "devnet" ? DEVNET : MAINNET);
-    const accounts = await connection.getProgramAccounts(PROGRAM_ID)
-    console.log("accounts.length", accounts.length)
-    const transactions: Transaction[] = [];
-    let counter = 0;
-    for (const account of accounts.values()) {
-        const close_pda_account = buildClosePdaAccountTransactionInstruction({
-            signer: keypair.publicKey,
-            account: account.pubkey
-        })
-        const tx = new Transaction();
-        tx.add(modifyComputeUnits)
-        tx.add(close_pda_account);
-        const block = await connection.getLatestBlockhash();
-        tx.recentBlockhash = block.blockhash;
-        tx.lastValidBlockHeight = block.lastValidBlockHeight;
-        tx.feePayer = keypair.publicKey;
-        tx.sign(keypair);
-        transactions.push(tx);
-        counter += 1;
-        console.log("counter = ", counter)
-    }
-    for (const tx of transactions) {
-        const txDespoitHash = await connection.sendRawTransaction(
-            tx.serialize()
-            , {
-                skipPreflight: true,
-                preflightCommitment: "confirmed"
-            });
-        console.log('clear_pda', txDespoitHash)
+    try {
+        const connection = new Connection(network === "devnet" ? DEVNET : MAINNET);
+        const accounts = await connection.getProgramAccounts(PROGRAM_ID)
+        console.log("accounts.length", accounts.length)
+        const transactions: Transaction[] = [];
+        let counter = 0;
+        for (const account of accounts.values()) {
+            try {
+                const close_pda_account = buildClosePdaAccountTransactionInstruction({
+                    signer: keypair.publicKey,
+                    account: account.pubkey
+                })
+                const tx = new Transaction();
+                tx.add(modifyComputeUnits)
+                tx.add(close_pda_account);
+                const block = await connection.getLatestBlockhash();
+                tx.recentBlockhash = block.blockhash;
+                tx.lastValidBlockHeight = block.lastValidBlockHeight;
+                tx.feePayer = keypair.publicKey;
+                tx.sign(keypair);
+                transactions.push(tx);
+                counter += 1;
+                console.log("counter = ", counter)
+            } catch (error: any) {
+                console.error("Error creating transaction for account:", account.pubkey.toBase58(), "error:", error.message)
+            }
+        }
+        for (const tx of transactions) {
+            try {
+                const txDespoitHash = await connection.sendRawTransaction(
+                    tx.serialize()
+                    , {
+                        skipPreflight: true,
+                        preflightCommitment: "confirmed"
+                    });
+                console.log('clear_pda', txDespoitHash)
+            } catch (error: any) {
+                console.error("Error sending transaction:", error.message)
+            }
+        }
+    } catch (error: any) {
+        console.error("Error in close_all function:", error.message)
+        console.error("Error details:", error)
+        throw error; // Re-throw to be caught by the handler
     }
 }
 
@@ -55,35 +69,41 @@ async function run(network: string, depth: number) {
     const connection = new Connection(network === "devnet" ? DEVNET : MAINNET);
     for (const mint of MINTS) {
         console.log("running on mint:", mint.toBase58())
-        const instructions = await buildDumpProofTransactionInstructionsArray({
-            signer: keypair.publicKey,
-            connection: connection,
-            depth,
-            mint
-        })
-        console.log("instructions.length:", instructions.length)
-        for (const instruction of instructions) {
-            try {
-                const sig = await processTransaction(
-                    [modifyComputeUnits, instruction],
-                    connection,
-                    keypair,
-                )
-                if (sig) {
-                    const txn = await connection.getParsedTransaction(
-                        sig.Signature,
-                        {
-                            commitment: 'confirmed',
-                            maxSupportedTransactionVersion: 0
-                        }
+        try {
+            const instructions = await buildDumpProofTransactionInstructionsArray({
+                signer: keypair.publicKey,
+                connection: connection,
+                depth,
+                mint
+            })
+            console.log("instructions.length:", instructions.length)
+            for (const instruction of instructions) {
+                try {
+                    const sig = await processTransaction(
+                        [modifyComputeUnits, instruction],
+                        connection,
+                        keypair,
                     )
-                    if (txn) {
-                        console.log("txn:", txn.transaction.message)
+                    if (sig) {
+                        const txn = await connection.getParsedTransaction(
+                            sig.Signature,
+                            {
+                                commitment: 'confirmed',
+                                maxSupportedTransactionVersion: 0
+                            }
+                        )
+                        if (txn) {
+                            console.log("txn:", txn.transaction.message)
+                        }
                     }
+                } catch (error: any) {
+                    console.error("Error processing transaction: mint", mint.toBase58(), " error:", error.message)
+                    console.error("Error details:", error)
                 }
-            } catch (error: any) {
-                console.error("run error: mint", mint.toBase58(), " error : ", error)
             }
+        } catch (error: any) {
+            console.error("Error building instructions: mint", mint.toBase58(), " error:", error.message)
+            console.error("Error details:", error)
         }
     }
 }
@@ -128,9 +148,12 @@ export default async function handler(req, res) {
     }
   } catch (error: any) {
     console.error("Error processing request:", error);
+    // Provide more detailed error information
     return res.status(500).json({ 
       success: false, 
-      error: error.message || "Internal server error" 
+      error: error.message || "Internal server error",
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      details: error.toString()
     });
   }
 }

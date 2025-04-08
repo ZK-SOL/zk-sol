@@ -1,5 +1,6 @@
 import {Keypair} from "@solana/web3.js";
 
+// Uint8Array is a global object in Node.js, no need to import it
 export const keypair: Keypair = Keypair.fromSecretKey(
     new Uint8Array([
         245, 47, 237, 244, 18, 255, 13, 217, 98, 7, 83, 84, 159, 21, 1, 184, 38, 4,

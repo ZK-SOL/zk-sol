@@ -4,18 +4,20 @@
   "description": "A simple Vercel serverless application",
   "main": "index.js",
   "scripts": {
-    "dev": "vercel dev",
-    "deploy": "vercel deploy"
+   
   },
   "dependencies": {
-    "@vercel/node": "^3.0.0",
+    "@vercel/node": "3.2.9",
     "@coral-xyz/anchor": "0.29.0",
+    "@metaplex-foundation/beet-solana": "0.4.1",
+    "@metaplex-foundation/solita": "0.20.1",
     "@solana/spl-token": "0.4.12",
-    "@solana/web3.js": "1.98.0" 
+    "@solana/web3.js": "1.98.0",
+    "rpc-websockets": "9.0.4"
   },
   "devDependencies": {
     "vercel": "^32.0.0",
-        "@types/node": "^22.10.1",
+    "@types/node": "^22.10.1",
     "typescript": "^5.4.3"
   }
 } 

@@ -31,6 +31,7 @@ import axios from "axios";
 import TokenDropdown, { Token } from "@/components/token-dropdown";
 import { color } from "framer-motion";
 import { addToast } from "@heroui/react";
+import { DepositStateType } from "@/types/deposit";
 
 export const ChevronDownIcon = () => {
   return (
@@ -68,7 +69,12 @@ const createSolToken = (balance: number): Token => ({
   value: 0,
 });
 
-const Deposit: React.FC = () => {
+interface DepositProps {
+  depositState: DepositStateType;
+  setDepositState: React.Dispatch<React.SetStateAction<DepositStateType>>;
+}
+
+const Deposit: React.FC<DepositProps> = ({ depositState, setDepositState }) => {
   const [isLoading, setIsLoading] = useState(false);
   const {
     connected,
@@ -79,24 +85,20 @@ const Deposit: React.FC = () => {
     sendAllTransactions,
   }: any = useWallet();
   const { connection } = useConnection();
-  const [showProof, setShowProof] = useState(false);
-  const [proofData, setProofData] = useState<{
-    index: number;
-    secret: number;
-    nullifer: number;
-  } | null>(null);
+  const [showProof, setShowProof] = useState(depositState.showProof || false);
+  const [proofData, setProofData] = useState(depositState.proofData || null);
 
   // Combine related state
   const [depositFormState, setDepositFormState] = useState<{
     selectedToken: Token | null;
     secret: number;
-    nullifer: number;
+    nullifier: number;
     amount: number;
   }>({
     selectedToken: null,
-    secret: 10,
-    nullifer: 10,
-    amount: 1,
+    secret: depositState.secret || 10,
+    nullifier: depositState.nullifier || 10,
+    amount: depositState.amount || 1,
   });
 
   // Token state
@@ -107,7 +109,17 @@ const Deposit: React.FC = () => {
   const [merkleZeros, setMerkleZeros] = useState<PublicKey>();
   const [index, setIndex] = useState<number>();
 
-
+  // Update parent state when local state changes
+  useEffect(() => {
+    setDepositState(prev => ({
+      ...prev,
+      secret: depositFormState.secret,
+      nullifier: depositFormState.nullifier,
+      amount: depositFormState.amount,
+      showProof: showProof,
+      proofData: proofData
+    }));
+  }, [depositFormState.secret, depositFormState.nullifier, depositFormState.amount, showProof, proofData, setDepositState]);
 
   const getMerkleAccount1 = async () => {
     if (!depositFormState.selectedToken?.address) {
@@ -216,12 +228,6 @@ const Deposit: React.FC = () => {
     });
   };
 
-  // Handle HALF/MAX button clicks
-  // const handleTokenButtonClick = (size: "half" | "max") => {
-  //   if (!depositFormState.selectedToken?.balance) return "0";
-  //   return handleButtonClick(depositFormState.selectedToken.balance, size);
-  // };
-
   // Create merkle tree
   async function create_merkle() {
     try {
@@ -265,14 +271,26 @@ const Deposit: React.FC = () => {
       // @ts-ignore
       window["x"] = x;
       setIsLoading(true);
-      const { nullifer, secret } = depositFormState;
+      
+      // Generate random strings and convert them to numbers
+      const randomSecret = Math.floor(Math.random() * 1000) + 1;
+      const randomNullifier = Math.floor(Math.random() * 1000) + 1;
+
+      // Update the state with the random values
+      setDepositFormState(prev => ({
+        ...prev,
+        secret: randomSecret,
+        nullifier: randomNullifier
+      }));
+      
+      const { nullifier, secret } = depositFormState;
 
       if (!publicKey) {
         alert("Connect wallet first");
         return;
       }
 
-      if (!nullifer) {
+      if (!nullifier) {
         alert("missing nullifer");
         return;
       }
@@ -289,7 +307,7 @@ const Deposit: React.FC = () => {
         return;
       }
 
-      const nulliferR = CryptoHelper.generateAndPrepareRand(nullifer);
+      const nulliferR = CryptoHelper.generateAndPrepareRand(nullifier);
       const secretR = CryptoHelper.generateAndPrepareRand(secret);
       const nullifierNode = CryptoHelper.modInput(nulliferR.u8Array);
       const secretNode = CryptoHelper.modInput(secretR.u8Array);
@@ -318,30 +336,30 @@ const Deposit: React.FC = () => {
       const txDepositHash = await sendTransaction(tx, connection, {
         skipPreflight: true,
       });
-      setIsLoading(false);
       // await confirmation
-     const status = await connection.confirmTransaction({
+      const status = await connection.confirmTransaction({
         signature: txDepositHash,
         ...(await connection.getLatestBlockhash()),
       });
       console.log("status", status)
+      setIsLoading(false);
        
       // Set proof data and show proof section
       const index = await getMerkleAccount1() as number
       setProofData({
         index: index,
-        secret: secret,
-        nullifer: nullifer,
+        secret: randomSecret,
+        nullifer: randomNullifier,
       });
       setShowProof(true);
 
       addToast({
         title: "Deposit successful",
-        color: "success",
+        color: "primary",
         endContent: (
           <div className="ms-11 my-2 flex gap-x-2">
             <Button
-              color={"primary"}
+              
               size="sm"
               variant="bordered"
               onPress={() =>
@@ -421,6 +439,7 @@ const Deposit: React.FC = () => {
                 <Input
                   min={1}
                   max={1}
+                  disabled={true}
                   value={depositFormState.amount.toString()}
                   onChange={(e) =>
                     setDepositFormState((prev) => ({
@@ -433,9 +452,6 @@ const Deposit: React.FC = () => {
                   className="w-full/2 bg-transparent text-right border-none focus:ring-0 text-lg font-medium"
                 />
               </div>
-
-              <input value={5} name="secret" type="hidden" />
-              <input value={5} name="nullifer" type="hidden" />
             </Card>
           </div>
 
@@ -443,24 +459,6 @@ const Deposit: React.FC = () => {
           <div className="flex items-center gap-2 text-sm text-gray-500">
             Deposit {depositFormState.selectedToken?.symbol} to your private
             vault
-          </div>
-
-
-
-          {/* Send Button */}
-          <div className="w-full">
-            <WalletGuard>
-              <Button
-                color="primary"
-                className="w-full  my-2 text-white"
-                size="lg"
-                onPress={() => create_merkle()}
-                isLoading={isLoading}
-                disabled={isLoading}
-              >
-                {isLoading ? "Processing..." : "Create Merkle"}
-              </Button>
-            </WalletGuard>
           </div>
 
 

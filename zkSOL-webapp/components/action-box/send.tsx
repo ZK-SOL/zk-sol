@@ -49,21 +49,19 @@ const Send: React.FC = () => {
   // Combine related state
   const [sendFormState, setSendFormState] = useState<{
     selectedToken: Token | null;
-    secret: number;
-    nullifer: number;
-    index: number;
+    secret: number | null;
+    nullifier: number | null;
+    index: number | null;
     amount: number;
     receiverAddress: string;
   }>({
     selectedToken: null,
-    secret: 10,
-    nullifer: 10,
-    index: 0,
+    secret: null,
+    nullifier: null,
+    index: null,
     amount: 0,
     receiverAddress: "",
   });
-  const [nullifer, setNullifer] = useState<number>();
-  const [secret, setSecret] = useState<number>();
   const [depth, setDepth] = useState<number>(20);
   const [merkleAddress, setMerkleAddress] = useState<PublicKey>();
   const [merkleZeros, setMerkleZeros] = useState<PublicKey>();
@@ -126,16 +124,22 @@ const Send: React.FC = () => {
     const parts = value.split("-");
 
     if (parts.length === 3) {
-      const [index, nullifer, secret] = parts;
-      console.log("secret", secret, "nullifer", nullifer, "index", index);
+      // Correct order: secret-nullifier-index
+      const [index, secret, nullifier] = parts;
+      console.log("secret", secret, "nullifier", nullifier, "index", index);
+      
       // Update the form state with the parsed values
-      setSendFormState((prev) => ({
-        ...prev,
-        secret: parseInt(secret, 10) || prev.secret,
-        nullifer: parseInt(nullifer, 10) || prev.nullifer,
-        index: parseInt(index, 10) || prev.index,
-      }));
-      console.log("sendFormState", sendFormState);
+      setSendFormState((prev: any) => {
+        const newState = {
+          ...prev,
+          secret: Number(secret),
+          nullifier: Number(nullifier),
+          index: Number(index),
+        };
+        // Log the new state inside the callback to see the updated values
+        console.log("Updated sendFormState:", newState);
+        return newState;
+      });
     }
   };
 
@@ -171,7 +175,7 @@ const Send: React.FC = () => {
     try {
       setIsLoading(true);
       const recipient = new PublicKey(sendFormState.receiverAddress);
-      let nullifer = sendFormState.nullifer;
+      let nullifier = sendFormState.nullifier;
       let secret = sendFormState.secret;
       let index = sendFormState.index;
       console.log("formstate", sendFormState);
@@ -179,15 +183,15 @@ const Send: React.FC = () => {
         alert("Connect wallet first");
         return;
       }
-      if (!nullifer) {
-        alert("missing nullifer");
+      if (!nullifier) {
+        alert("missing nullifier");
         return;
       }
       if (!secret) {
         alert("missing secret");
         return;
       }
-      if (index === undefined) {
+      if (!index) {
         alert("missing index");
         return;
       }
@@ -228,11 +232,11 @@ const Send: React.FC = () => {
         }
       }
 
-      const nulliferR = CryptoHelper.generateAndPrepareRand(nullifer);
+      const nullifierR = CryptoHelper.generateAndPrepareRand(nullifier);
       const secretR = CryptoHelper.generateAndPrepareRand(secret);
       const circuit_output = await run_circuit({
         root,
-        nullifier: nulliferR.num,
+        nullifier: nullifierR.num,
         secret: secretR.num,
         circuit_name: circutName,
         recipient,
@@ -244,7 +248,7 @@ const Send: React.FC = () => {
         ZkHelper.convertProofToBytes(circuit_output.proof as any),
       );
       const nullifierHash = CryptoHelper.hash(
-        CryptoHelper.numberArrayToU8IntArray(nulliferR.u8Array),
+        CryptoHelper.numberArrayToU8IntArray(nullifierR.u8Array),
       );
       const instruction = await buildWithdrawTransactionInstruction({
         connection,

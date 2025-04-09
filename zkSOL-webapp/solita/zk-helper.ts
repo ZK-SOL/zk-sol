@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { CryptoHelper, CryptoNumber } from "./crypto-helpers";
 import * as snarkjs from "snarkjs";
 import { WithdrawCircuitInputs } from "./wrappers/merkle_wrapper";

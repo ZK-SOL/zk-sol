@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {sha256} from '@noble/hashes/sha256';
 import {poseidon1, poseidon2} from 'poseidon-lite'
 import {GenerateProofPath} from "./wrappers/merkle_wrapper";

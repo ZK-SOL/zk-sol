@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {sha256} from '@noble/hashes/sha256';
 import {poseidon1, poseidon2} from 'poseidon-lite'
 import {GenerateProofPath} from "./wrappers/merkle_wrapper";
@@ -13,6 +12,12 @@ export class CryptoNumber {
     bigInt: bigint;
     u8Array: Uint8Array;
     mod: number[];
+
+    constructor() {
+        this.bigInt = BigInt(0);
+        this.u8Array = new Uint8Array(32);
+        this.mod = new Array(32).fill(0);
+    }
 
     static from_num(n: number | bigint): CryptoNumber {
         const bigInt = typeof n === "bigint" ? n : BigInt(n);
@@ -180,7 +185,7 @@ export class CryptoHelper {
      * @param bigInt - BigInt
      * @returns Buffer
      */
-    static to32ByteBuffer(bigInt): Buffer {
+    static to32ByteBuffer(bigInt: bigint): Buffer {
         const hexString = bigInt.toString(16).padStart(64, '0');
         return Buffer.from(hexString, "hex");
     }

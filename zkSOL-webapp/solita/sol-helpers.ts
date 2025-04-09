@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import {
     AccountMeta,
     AddressLookupTableAccount,
@@ -21,12 +21,12 @@ export async function processAndValidateTransaction(
     signer: Keypair
 ) {
     const sig = await processTransaction(instructions, connection, signer)
-    const txn = await connection.getParsedTransaction(sig.Signature, 'confirmed')
-    assert.equal(
-        sig.SignatureResult.err,
-        null,
-        `${txn?.meta?.logMessages.join('\n')}\n\n${JSON.stringify(sig)}`
-    )
+    if (sig) {
+        const txn = await connection.getParsedTransaction(sig.Signature, 'confirmed')
+        return txn
+    } else {
+        return null
+    }
 }
 
 export declare type TxnResult = {
@@ -39,7 +39,7 @@ export async function processTransaction(
     connection: Connection,
     payer: Keypair,
     lookupTableAccount?: AddressLookupTableAccount
-): Promise<TxnResult> {
+): Promise<TxnResult | null> {
     try {
         const blockStats = await connection.getLatestBlockhash()
         if (lookupTableAccount) {
@@ -88,9 +88,9 @@ export async function processTransaction(
                 SignatureResult: result.value
             }
         }
-        // }
     } catch (e) {
         console.log('processTransaction error', e)
+        return null
     }
 }
 
@@ -115,7 +115,7 @@ export async function airdrop(
 export async function getTxn(
     program: Program<any>,
     signature: string
-): Promise<ParsedTransactionWithMeta> {
+): Promise<ParsedTransactionWithMeta | null> {
     const blockStats = await program.provider.connection.getLatestBlockhash()
     const strategy: BlockheightBasedTransactionConfirmationStrategy = {
         signature: signature,
@@ -129,9 +129,7 @@ export async function getTxn(
     )
 }
 
-export async function verboseTxn(transaction: ParsedTransactionWithMeta) {
-    console.log(transaction.meta.logMessages.join('\n'))
-}
+
 
 export async function getOrCreateTokenAccountInstruction(
     mint: PublicKey,

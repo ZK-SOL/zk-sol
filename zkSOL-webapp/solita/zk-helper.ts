@@ -1,5 +1,5 @@
-
 import { CryptoHelper, CryptoNumber } from "./crypto-helpers";
+// @ts-ignore
 import * as snarkjs from "snarkjs";
 import { WithdrawCircuitInputs } from "./wrappers/merkle_wrapper";
 import { PublicKey } from "@solana/web3.js";

@@ -25,6 +25,7 @@ import TokenDropdown from "../token-dropdown";
 import axios from "axios";
 import { addToast } from "@heroui/react";
 import { NATIVE_MINT } from "@solana/spl-token";
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
 
 // Define token interface
 interface Token {
@@ -59,7 +60,7 @@ const Send: React.FC = () => {
     secret: null,
     nullifier: null,
     index: null,
-    amount: 0,
+    amount: 1,
     receiverAddress: "",
   });
   const [depth, setDepth] = useState<number>(20);
@@ -316,18 +317,32 @@ const Send: React.FC = () => {
                   onTokenChange={onTokenChange}
                 />
               </div>
-              <Input
-                value={sendFormState.amount.toString()}
-                onChange={(e) =>
-                  setSendFormState((prev) => ({
-                    ...prev,
-                    amount: parseFloat(e.target.value),
-                  }))
-                }
-                placeholder="0.00"
-                style={{ textAlign: "right" }}
-                className="w-full/2 bg-transparent text-right border-none focus:ring-0 text-lg font-medium"
-              />
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button
+                    variant="bordered"
+                    className="min-w-[60px]"
+                  >
+                    {sendFormState.amount}
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu aria-label="Amount selection">
+                  <DropdownItem
+                    key="1"
+                    onPress={() => setSendFormState(prev => ({ ...prev, amount: 1 }))}
+                  >
+                    1
+                  </DropdownItem>
+  
+                  <DropdownItem
+                    key="5"
+                    isDisabled
+                    className="opacity-50"
+                  >
+                    5 (soon)
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
             </div>
           </Card>
         </div>

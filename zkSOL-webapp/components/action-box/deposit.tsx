@@ -32,6 +32,7 @@ import TokenDropdown, { Token } from "@/components/token-dropdown";
 import { color } from "framer-motion";
 import { addToast } from "@heroui/react";
 import { DepositStateType } from "@/types/deposit";
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
 
 export const ChevronDownIcon = () => {
   return (
@@ -50,10 +51,6 @@ export const ChevronDownIcon = () => {
   );
 };
 
-// Move these outside the component to avoid recreating on each render
-const LAMPORTS_PER_SOL_DECIMAL = LAMPORTS_PER_SOL;
-
-
 // Helper function to create SOL token
 const createSolToken = (balance: number): Token => ({
   chainId: 101,
@@ -64,7 +61,7 @@ const createSolToken = (balance: number): Token => ({
   logoURI:
     "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
   tags: ["native"],
-  balance: balance / LAMPORTS_PER_SOL_DECIMAL,
+  balance: balance / LAMPORTS_PER_SOL,
   price: 0,
   value: 0,
 });
@@ -76,6 +73,7 @@ interface DepositProps {
 
 const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, setDepositState: setParentDepositState }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [state, setState] = useState<"deposit" | "processing..." | "generating proof">("deposit");
   const {
     connected,
     publicKey,
@@ -109,9 +107,7 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
   const [tokens, setTokens] = useState<Token[]>([]);
 
   const [depth, setDepth] = useState<number>(20);
-  const [merkleAddress, setMerkleAddress] = useState<PublicKey>();
-  const [merkleZeros, setMerkleZeros] = useState<PublicKey>();
-  const [index, setIndex] = useState<number>();
+
 
   // Add refs to store random values
   const randomValuesRef = useRef<{
@@ -236,7 +232,7 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
         const solBalance = await connection.getBalance(publicKey);
         console.log(
           "Initial SOL balance:",
-          solBalance / LAMPORTS_PER_SOL_DECIMAL,
+          solBalance / LAMPORTS_PER_SOL,
         );
         const solToken = createSolToken(solBalance);
         console.log("Setting initial SOL token:", solToken);
@@ -266,7 +262,7 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
   async function deposit_merkle() {
     try {
       setIsLoading(true);
-      
+      setState("processing...");
       // Generate random values only if they haven't been generated yet
 
         randomValuesRef.current.secret = Math.floor(Math.random() * 1000) + 1;
@@ -345,34 +341,7 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
       const txDepositHash = await sendTransaction(tx, connection, {
         skipPreflight: true,
       });
-      // await confirmation
-      const status = await connection.confirmTransaction({
-        signature: txDepositHash,
-        ...(await connection.getLatestBlockhash()),
-      });
   
-      setIsLoading(false);
-       
-      // Set proof data and show proof section
-      const index = await getMerkleAccount1() as number
-      const newProofData = {
-        index: index,
-        secret: randomSecret,
-        nullifier: randomNullifier,
-      };
-      setProofData(newProofData);
-      setShowProof(true);
-
-      // Update parent state directly after successful deposit
-      if (setParentDepositState) {
-        setParentDepositState({
-          secret: randomSecret,
-          nullifier: randomNullifier,
-          amount: depositFormState.amount,
-          showProof: true,
-          proofData: newProofData,
-        });
-      }
 
       addToast({
         title: "Deposit successful",
@@ -395,8 +364,35 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
           </div>
         ),
       });
+      setState("generating proof");
+       // await confirmation
+       const status = await connection.confirmTransaction({
+        signature: txDepositHash,
+        ...(await connection.getLatestBlockhash()),
+      });
+  
+      setIsLoading(false);
+      setState("deposit");
+      // Set proof data and show proof section
+      const index = await getMerkleAccount1() as number
+      const newProofData = {
+        index: index,
+        secret: randomSecret,
+        nullifier: randomNullifier,
+      };
+      setProofData(newProofData);
+      setShowProof(true);
 
-   
+      // Update parent state directly after successful deposit
+      if (setParentDepositState) {
+        setParentDepositState({
+          secret: randomSecret,
+          nullifier: randomNullifier,
+          amount: depositFormState.amount,
+          showProof: true,
+          proofData: newProofData,
+        });
+      }
       
     } catch (error: any) {
       console.error("deposit_merkle", error);
@@ -458,21 +454,31 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
                     onTokenChange={onTokenChange}
                   />
                 </div>
-                <Input
-                  min={1}
-                  max={1}
-                  disabled={true}
-                  value={depositFormState.amount.toString()}
-                  onChange={(e) =>
-                    setDepositFormState((prev) => ({
-                      ...prev,
-                      amount: parseFloat(e.target.value),
-                    }))
-                  }
-                  placeholder="0.00"
-                  style={{ textAlign: "right" }}
-                  className="w-full/2 bg-transparent text-right border-none focus:ring-0 text-lg font-medium"
-                />
+                <Dropdown>
+                  <DropdownTrigger>
+                    <Button
+                      variant="bordered"
+                      className="min-w-[60px]"
+                    >
+                      {depositFormState.amount}
+                    </Button>
+                  </DropdownTrigger>
+                  <DropdownMenu aria-label="Amount selection">
+                    <DropdownItem
+                      key="1"
+                      onPress={() => setDepositFormState(prev => ({ ...prev, amount: 1 }))}
+                    >
+                      1
+                    </DropdownItem>
+                    <DropdownItem
+                      key="5"
+                      isDisabled
+                      className="opacity-50"
+                    >
+                      5 (soon)
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
               </div>
             </Card>
           </div>
@@ -489,13 +495,13 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
             <WalletGuard>
               <Button
                 color="primary"
-                className="w-full  my-2 text-white"
+                className="w-full  my-2 text-white capitalize"
                 size="lg"
                 onPress={() => deposit_merkle()}
                 isLoading={isLoading}
                 disabled={isLoading}
               >
-                {isLoading ? "Processing..." : "Deposit"}
+                {state}
               </Button>
             </WalletGuard>
           </div>

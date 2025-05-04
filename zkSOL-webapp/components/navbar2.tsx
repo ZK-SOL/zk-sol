@@ -33,6 +33,7 @@ import ClientOnly from './ClientOnly';
 import { AcmeIcon } from "./logo";
 import WalletContext from "@/context/wallet-context";
 import { ThemeSwitch } from "./theme-switch";
+import Image from "next/image";
 
 // Optionally, you can also dynamically import the WalletMultiButton
 const WalletMultiButton = dynamic(
@@ -75,7 +76,7 @@ export default function Component() {
 
           <NavbarBrand>
             <div className="rounded-full bg-foreground text-background">
-              <AcmeIcon size={34} />
+              <Image src="/logo.jpeg" className="rounded-full grayscale" alt="Zask Logo" width={34} height={34} />
             </div>
             <span className="ml-2 font-medium">Zask</span>
           </NavbarBrand>

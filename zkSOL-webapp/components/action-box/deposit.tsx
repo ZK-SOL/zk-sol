@@ -80,8 +80,7 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
     disconnect,
     signTransaction,
     sendTransaction,
-    sendAllTransactions,
-  }: any = useWallet();
+  } = useWallet();
   const { connection } = useConnection();
   const [showProof, setShowProof] = useState(false);
   const [proofData, setProofData] = useState<{
@@ -104,7 +103,19 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
   });
 
   // Token state
-  const [tokens, setTokens] = useState<Token[]>([]);
+  const [tokens, setTokens] = useState<Token[]>([
+    {
+      chainId: 101,
+      address: NATIVE_MINT.toString(),
+      symbol: "SOL",
+      name: "Solana",
+      decimals: 9,
+      balance: 0,
+      logoURI:
+        "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+    },
+
+  ]);
 
   const [depth, setDepth] = useState<number>(20);
 
@@ -132,7 +143,8 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
         setProofData(parentDepositState.proofData);
       }
     }
-  }, [parentDepositState]);
+
+  }, [parentDepositState, publicKey]);
 
   // Update parent state when local state changes
   useEffect(() => {
@@ -166,50 +178,23 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
     }
 
     try {
-      console.log("Fetching tokens for wallet:", publicKey.toString());
-      const response = await axios.get(
-        `/api/das?wallet=${publicKey.toString()}`,
-      );
-      console.log("API response:", response.data);
-
-      if (response.data && Array.isArray(response.data)) {
-        console.log("API returned array of tokens:", response.data.length);
-
-        // Check if SOL is already in the response
-        const hasSol = response.data.some((token) => token.symbol === "SOL");
-        console.log("SOL exists in response:", hasSol);
-
-        // Get SOL balance
-        const solBalance = await connection.getBalance(publicKey);
-        const solToken = createSolToken(solBalance);
-
-        // Prepare tokens list with SOL
-        let updatedTokens = response.data;
-        if (!hasSol) {
-          console.log("Adding SOL token manually:", solToken);
-          updatedTokens = [solToken, ...response.data];
-        }
-
-        // Update tokens state
-        setTokens(updatedTokens);
+     // Fallback to SOL only
+     const solBalance = await connection.getBalance(publicKey);
+     const solToken = createSolToken(solBalance);
+     console.log("API failed, setting only SOL token:", solToken);
+     setTokens([solToken]);
+     setDepositFormState((prev) => ({ ...prev, selectedToken: solToken }));
 
         // Set selected token if not already set
         if (!depositFormState.selectedToken) {
-          const tokenToSelect = hasSol ? response.data[0] : solToken;
+          const tokenToSelect = tokens[0];
           console.log("Setting selected token:", tokenToSelect);
           setDepositFormState((prev) => ({
             ...prev,
             selectedToken: tokenToSelect,
           }));
         }
-      } else {
-        console.log("API response is not an array:", response.data);
-        // Fallback to SOL only
-        const solBalance = await connection.getBalance(publicKey);
-        const solToken = createSolToken(solBalance);
-        setTokens([solToken]);
-        setDepositFormState((prev) => ({ ...prev, selectedToken: solToken }));
-      }
+      
     } catch (error) {
       console.error("Error fetching tokens:", error);
 
@@ -227,16 +212,11 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
     const initializeTokens = async () => {
       if (connected && publicKey) {
         console.log("Wallet connected, initializing tokens");
-
-        // Set initial SOL token
-        const solBalance = await connection.getBalance(publicKey);
-        console.log(
-          "Initial SOL balance:",
-          solBalance / LAMPORTS_PER_SOL,
-        );
-        const solToken = createSolToken(solBalance);
+        const balance = await connection.getBalance(publicKey);
+        console.log("Balance:", balance);
+        const solToken = createSolToken(balance);
         console.log("Setting initial SOL token:", solToken);
-
+        setTokens([solToken]);
         setDepositFormState((prev) => ({ ...prev, selectedToken: solToken }));
         fetchTokens();
       } else {

@@ -76,41 +76,7 @@ const Send: React.FC = () => {
       decimals: 9,
       logoURI:
         "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
-    },
-    {
-      chainId: 101,
-      address: "4otg1HCdA1NozTX6Teh9qQzSsSeTnwSCLaFvSH4hbuCz",
-      symbol: "testSOL",
-      name: "testSOL",
-      decimals: 9,
-      logoURI:
-        "https://api.phantom.app/image-proxy/?image=https%3A%2F%2Fbafkreicp5rcho64icssijsuaexo5nfum6nf4anz4gy5dga6sjl4bp7kp3e.ipfs.nftstorage.link&anim=true&fit=cover&width=128&height=128",
-      tags: ["community", "lst", "strict", "verified"],
-    },
-    // {
-    //   chainId: 101,
-    //   address: "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
-    //   symbol: "JitoSOL",
-    //   name: "Jito Staked SOL",
-    //   decimals: 9,
-    //   logoURI: "https://storage.googleapis.com/token-metadata/JitoSOL-256.png",
-    //   tags: [
-    //       "community",
-    //       "lst",
-    //       "strict",
-    //       "verified"
-    //   ],
-
-    // },
-    // {
-    //   chainId: 101,
-    //   address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    //   decimals: 6,
-    //   logoURI: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
-    //   name: "USD Coin",
-    //   symbol: "USDC",
-
-    // }
+    }
   ]);
 
   const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({

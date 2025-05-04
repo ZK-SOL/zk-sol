@@ -5,9 +5,10 @@ import { Connection } from "@solana/web3.js";
 import { PublicKey } from "@solana/web3.js";
 import { keypair } from "../keypair";
 import { modifyComputeUnits } from "@/solita/sol-helpers";
-export const DEVNET = 'https://devnet.helius-rpc.com/?api-key=32c35600-ee87-4ba1-b348-7d41f9b1693c';
-export const MAINNET = 'https://mainnet.helius-rpc.com/?api-key=32c35600-ee87-4ba1-b348-7d41f9b1693c';
-export type RelayInputs = {
+import { NextRequest, NextResponse } from "next/server";
+ const DEVNET = 'https://devnet.helius-rpc.com/?api-key=32c35600-ee87-4ba1-b348-7d41f9b1693c';
+ const MAINNET = 'https://mainnet.helius-rpc.com/?api-key=32c35600-ee87-4ba1-b348-7d41f9b1693c';
+ type RelayInputs = {
 	nullifierHash: number[];
 	proof: number[];
 	root: number[];
@@ -16,7 +17,7 @@ export type RelayInputs = {
 	mint: string;
 };
 
-export async function relay(input_params: RelayInputs, network: string): Promise<string | undefined> {
+async function relay(input_params: RelayInputs, network: string): Promise<string | undefined> {
 	console.log('running relay');
 	try {
 		console.log('starting run: network', network);
@@ -39,9 +40,17 @@ export async function relay(input_params: RelayInputs, network: string): Promise
 	}
 }
 
-export async function POST(request: Request) {
-	const input_params: RelayInputs = await request.json();
-	const network = 'devnet';
-	const sig = await relay(input_params, network);
-	return new Response(JSON.stringify({ signature: sig }));
+export async function POST(request: NextRequest): Promise<NextResponse> {
+	try {
+		const input_params: RelayInputs = await request.json();
+		const network = process.env.SOLANA_NETWORK || 'devnet';
+		const sig = await relay(input_params, network);
+		return NextResponse.json({ signature: sig });
+	} catch (error: any) {
+		console.error('Relay error:', error);
+		return NextResponse.json(
+			{ error: error.message || 'Failed to process relay request' },
+			{ status: 500 }
+		);
+	}
 }

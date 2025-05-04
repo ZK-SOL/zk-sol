@@ -83,6 +83,8 @@ async function run(network: string, depth: number) {
                         [modifyComputeUnits, instruction],
                         connection,
                         keypair,
+                        undefined,
+                        false
                     )
                     if (sig) {
                         const txn = await connection.getParsedTransaction(
@@ -110,50 +112,50 @@ async function run(network: string, depth: number) {
 
 /**
  * Vercel Serverless Function handler
- * 
+ *
  * @param req - The request object from Vercel
  * @param res - The response object from Vercel
  */
 export default async function handler(req, res) {
-  // Only allow GET requests
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    // Get query parameters
-    const { searchParams } = new URL(req.url, `http://${req.headers.host}`);
-    console.log("url", req.url);
-    console.log("searchParams", searchParams);
-    
-    const closeAll = searchParams.get("closeAll") || false;
-    const network = searchParams.get("network") || "devnet";
-    const depth = parseInt(searchParams.get("depth") || "20");
-    
-    if (closeAll === "true") {
-      console.log("running close all");
-      await close_all(network);
-      return res.status(200).json({ 
-        success: true, 
-        message: `Closed all accounts on ${network}` 
-      });
-    } else {
-      // Regular request
-      await run(network, depth);
-      return res.status(200).json({ 
-        success: true, 
-        message: `Processed dump for network ${network} with depth ${depth}`,
-        keypair: keypair.publicKey.toBase58()
-      });
+    // Only allow GET requests
+    if (req.method !== 'GET') {
+        return res.status(405).json({error: 'Method not allowed'});
     }
-  } catch (error: any) {
-    console.error("Error processing request:", error);
-    // Provide more detailed error information
-    return res.status(500).json({ 
-      success: false, 
-      error: error.message || "Internal server error",
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-      details: error.toString()
-    });
-  }
+
+    try {
+        // Get query parameters
+        const {searchParams} = new URL(req.url, `http://${req.headers.host}`);
+        console.log("url", req.url);
+        console.log("searchParams", searchParams);
+
+        const closeAll = searchParams.get("closeAll") || false;
+        const network = searchParams.get("network") || "devnet";
+        const depth = parseInt(searchParams.get("depth") || "20");
+
+        if (closeAll === "true") {
+            console.log("running close all");
+            await close_all(network);
+            return res.status(200).json({
+                success: true,
+                message: `Closed all accounts on ${network}`
+            });
+        } else {
+            // Regular request
+            await run(network, depth);
+            return res.status(200).json({
+                success: true,
+                message: `Processed dump for network ${network} with depth ${depth}`,
+                keypair: keypair.publicKey.toBase58()
+            });
+        }
+    } catch (error: any) {
+        console.error("Error processing request:", error);
+        // Provide more detailed error information
+        return res.status(500).json({
+            success: false,
+            error: error.message || "Internal server error",
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            details: error.toString()
+        });
+    }
 }

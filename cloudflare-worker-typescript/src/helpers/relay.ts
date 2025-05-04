@@ -13,7 +13,7 @@ export type RelayInputs = {
 	mint: string;
 };
 
-export async function relay(input_params: RelayInputs, network: string) {
+export async function relay(input_params: RelayInputs, network: string): Promise<string | undefined> {
 	console.log('running relay');
 	try {
 		console.log('starting run: network', network);
@@ -28,8 +28,9 @@ export async function relay(input_params: RelayInputs, network: string) {
 			depth: input_params.depth,
 			recipient: new PublicKey(input_params.recipient),
 		});
-		const sig = await processTransaction([modifyComputeUnits, instruction], connection, keypair);
-		await connection.getParsedTransaction(sig.Signature, 'confirmed');
+		const sig = await processTransaction([modifyComputeUnits, instruction], connection, keypair, undefined, false);
+		// await connection.getParsedTransaction(sig.Signature, 'confirmed');
+		return sig?.Signature;
 	} catch (error: any) {
 		console.error('relay error:', error);
 	}

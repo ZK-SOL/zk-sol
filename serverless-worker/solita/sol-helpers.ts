@@ -37,7 +37,8 @@ export async function processTransaction(
     instructions: TransactionInstruction[],
     connection: Connection,
     payer: Keypair,
-    lookupTableAccount?: AddressLookupTableAccount
+    lookupTableAccount?: AddressLookupTableAccount,
+    confirm?: boolean
 ): Promise<TxnResult> {
     try {
         const blockStats = await connection.getLatestBlockhash()
@@ -59,11 +60,19 @@ export async function processTransaction(
                 blockhash: blockStats.blockhash,
                 lastValidBlockHeight: blockStats.lastValidBlockHeight
             }
-            const result = await connection.confirmTransaction(strategy, 'confirmed')
-            return {
-                Signature: sig,
-                SignatureResult: result.value
+            if (confirm) {
+                const result = await connection.confirmTransaction(strategy, 'confirmed')
+                return {
+                    Signature: sig,
+                    SignatureResult: result.value
+                }
+            } else {
+                return {
+                    Signature: sig,
+                    SignatureResult: {err: null}
+                }
             }
+
         } else {
             const tx = new Transaction()
             instructions.map((i) => tx.add(i))
@@ -81,10 +90,17 @@ export async function processTransaction(
                 blockhash: blockStats.blockhash,
                 lastValidBlockHeight: blockStats.lastValidBlockHeight
             }
-            const result = await connection.confirmTransaction(strategy, 'confirmed')
-            return {
-                Signature: sig,
-                SignatureResult: result.value
+            if (confirm) {
+                const result = await connection.confirmTransaction(strategy, 'confirmed')
+                return {
+                    Signature: sig,
+                    SignatureResult: result.value
+                }
+            } else {
+                return {
+                    Signature: sig,
+                    SignatureResult: {err: null}
+                }
             }
         }
         // }

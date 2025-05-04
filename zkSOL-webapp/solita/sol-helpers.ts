@@ -35,63 +35,78 @@ export declare type TxnResult = {
 };
 
 export async function processTransaction(
-    instructions: TransactionInstruction[],
-    connection: Connection,
-    payer: Keypair,
-    lookupTableAccount?: AddressLookupTableAccount
-): Promise<TxnResult | null> {
-    try {
-        const blockStats = await connection.getLatestBlockhash()
-        if (lookupTableAccount) {
-            const messageV0 = new TransactionMessage({
-                payerKey: payer.publicKey,
-                recentBlockhash: blockStats.blockhash,
-                instructions: instructions, // note this is an array of instructions
-            }).compileToV0Message([lookupTableAccount]);
-            // create a v0 transaction from the v0 message
-            const transactionV0 = new VersionedTransaction(messageV0);
-            // sign the v0 transaction using the file system wallet we created named `payer`
-            transactionV0.sign([payer]);
-            // send and confirm the transaction
-            // (NOTE: There is NOT an array of Signers here; see the note below...)
-            const sig = await connection.sendTransaction(transactionV0);
-            const strategy: BlockheightBasedTransactionConfirmationStrategy = {
-                signature: sig,
-                blockhash: blockStats.blockhash,
-                lastValidBlockHeight: blockStats.lastValidBlockHeight
-            }
-            const result = await connection.confirmTransaction(strategy, 'confirmed')
-            return {
-                Signature: sig,
-                SignatureResult: result.value
-            }
-        } else {
-            const tx = new Transaction()
-            instructions.map((i) => tx.add(i))
-            tx.recentBlockhash = blockStats.blockhash
-            tx.feePayer = payer.publicKey
-            tx.sign(payer)
-            const sig = await connection.sendRawTransaction(tx.serialize(), {
-                maxRetries: 3,
-                preflightCommitment: 'confirmed',
-                skipPreflight: true
-            })
-            // console.log('Transaction signature: ', sig)
-            const strategy: BlockheightBasedTransactionConfirmationStrategy = {
-                signature: sig,
-                blockhash: blockStats.blockhash,
-                lastValidBlockHeight: blockStats.lastValidBlockHeight
-            }
-            const result = await connection.confirmTransaction(strategy, 'confirmed')
-            return {
-                Signature: sig,
-                SignatureResult: result.value
-            }
-        }
-    } catch (e) {
-        console.log('processTransaction error', e)
-        return null
-    }
+	instructions: TransactionInstruction[],
+	connection: Connection,
+	payer: Keypair,
+	lookupTableAccount?: AddressLookupTableAccount,
+	confirm?: boolean
+): Promise<TxnResult | undefined> {
+	try {
+		const blockStats = await connection.getLatestBlockhash();
+		if (lookupTableAccount) {
+			const messageV0 = new TransactionMessage({
+				payerKey: payer.publicKey,
+				recentBlockhash: blockStats.blockhash,
+				instructions: instructions, // note this is an array of instructions
+			}).compileToV0Message([lookupTableAccount]);
+			// create a v0 transaction from the v0 message
+			const transactionV0 = new VersionedTransaction(messageV0);
+			// sign the v0 transaction using the file system wallet we created named `payer`
+			transactionV0.sign([payer]);
+			// send and confirm the transaction
+			// (NOTE: There is NOT an array of Signers here; see the note below...)
+			const sig = await connection.sendTransaction(transactionV0);
+			const strategy: BlockheightBasedTransactionConfirmationStrategy = {
+				signature: sig,
+				blockhash: blockStats.blockhash,
+				lastValidBlockHeight: blockStats.lastValidBlockHeight,
+			};
+			if (confirm) {
+				const result = await connection.confirmTransaction(strategy, 'confirmed');
+				return {
+					Signature: sig,
+					SignatureResult: result.value,
+				};
+			} else {
+				return {
+					Signature: sig,
+					SignatureResult: { err: null },
+				};
+			}
+		} else {
+			const tx = new Transaction();
+			instructions.map((i) => tx.add(i));
+			tx.recentBlockhash = blockStats.blockhash;
+			tx.feePayer = payer.publicKey;
+			tx.sign(payer);
+			const sig = await connection.sendRawTransaction(tx.serialize(), {
+				maxRetries: 3,
+				preflightCommitment: 'confirmed',
+				skipPreflight: true,
+			});
+			// console.log('Transaction signature: ', sig)
+			const strategy: BlockheightBasedTransactionConfirmationStrategy = {
+				signature: sig,
+				blockhash: blockStats.blockhash,
+				lastValidBlockHeight: blockStats.lastValidBlockHeight,
+			};
+			if (confirm) {
+				const result = await connection.confirmTransaction(strategy, 'confirmed');
+				return {
+					Signature: sig,
+					SignatureResult: result.value,
+				};
+			} else {
+				return {
+					Signature: sig,
+					SignatureResult: { err: null },
+				};
+			}
+		}
+		// }
+	} catch (e) {
+		console.log('processTransaction error', e);
+	}
 }
 
 export async function airdrop(

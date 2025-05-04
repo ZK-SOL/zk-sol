@@ -400,6 +400,7 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
         title: "Deposit failed",
         color: "danger",
         description: error.message,
+      
       });
       setIsLoading(false);
     }
@@ -529,7 +530,7 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
                 <p className="text-xs text-gray-500 mb-1">
                   Your ZKProof (copy and save this):
                 </p>
-                <div className="bg-white p-2 rounded border border-gray-300 break-all">
+                <div className="bg-white dark:bg-gray-800 p-2 rounded border border-gray-300 dark:border-gray-700 break-all">
                   <code className="text-sm font-mono">
                     {`${proofData.index}-${proofData.nullifier}-${proofData.secret}`}
                   </code>

@@ -252,7 +252,8 @@ const Send: React.FC = () => {
       /*
       send to relay here
        */
-      const relayUrl = "http://localhost:8787/relay";
+      const relayUrl = `${process.env.NEXT_PUBLIC_RELAY_URL}/api/relay`;
+      console.log("relayUrl", relayUrl);
       const body: {
         nullifierHash: number[];
         proof: number[];
@@ -277,7 +278,7 @@ const Send: React.FC = () => {
         },
       });
       const txSendHash =
-        relayResponse.status === 200 ? await relayResponse.text() : null;
+        relayResponse.status === 200 ? (await relayResponse.json()).signature : null;
       if (txSendHash === null) {
         throw new Error("error in relay");
       }

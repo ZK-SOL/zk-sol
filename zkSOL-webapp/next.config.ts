@@ -35,6 +35,7 @@ const nextConfig: NextConfig = {
     SOLANA_RPC_HOST: process.env.SOLANA_RPC_HOST,
     SOLANA_NETWORK: process.env.SOLANA_NETWORK,
     ZKLSOL_PROGRAM_ID: process.env.ZKLSOL_PROGRAM_ID,
+    NEXT_PUBLIC_RELAY_URL: process.env.NEXT_PUBLIC_RELAY_URL,
   },
 };
 

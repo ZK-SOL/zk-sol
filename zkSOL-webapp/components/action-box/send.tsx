@@ -248,24 +248,57 @@ const Send: React.FC = () => {
       const nullifierHash = CryptoHelper.hash(
         CryptoHelper.numberArrayToU8IntArray(nullifierR.u8Array),
       );
-      const instruction = await buildWithdrawTransactionInstruction({
-        connection,
-        signer: publicKey,
+
+      /*
+      send to relay here
+       */
+      const relayUrl = "http://localhost:8787/relay";
+      const body: {
+        nullifierHash: number[];
+        proof: number[];
+        root: number[];
+        recipient: string;
+        depth: number;
+        mint: string;
+      } = {
         nullifierHash,
-        root: CryptoHelper.bigIntToNumberArray(root),
         proof,
         depth,
-        recipient,
-        mint: new PublicKey(sendFormState.selectedToken.address),
+        mint: sendFormState.selectedToken.address,
+        recipient: recipient.toBase58(),
+        root: CryptoHelper.bigIntToNumberArray(root),
+      };
+
+      const relayResponse = await fetch(relayUrl, {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-      const tx = new Transaction();
-      tx.add(modifyComputeUnits);
-      tx.add(instruction);
-      tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-      tx.feePayer = publicKey;
-      const txSendHash = await sendTransaction(tx, connection, {
-        skipPreflight: true,
-      });
+      const txSendHash =
+        relayResponse.status === 200 ? await relayResponse.text() : null;
+      if (txSendHash === null) {
+        throw new Error("error in relay");
+      }
+      // const instruction = await buildWithdrawTransactionInstruction({
+      //   connection,
+      //   signer: publicKey,
+      //   nullifierHash,
+      //   root: CryptoHelper.bigIntToNumberArray(root),
+      //   proof,
+      //   depth,
+      //   recipient,
+      //   mint: new PublicKey(sendFormState.selectedToken.address),
+      // });
+      // const tx = new Transaction();
+      // tx.add(modifyComputeUnits);
+      // tx.add(instruction);
+      // tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      // tx.feePayer = publicKey;
+      // const txSendHash = await sendTransaction(tx, connection, {
+      //   skipPreflight: true,
+      // });
       setIsLoading(false);
       addToast({
         title: "Send successful",
@@ -288,7 +321,6 @@ const Send: React.FC = () => {
           </div>
         ),
       });
-
     } catch (error: any) {
       console.error("Error in withdraw_merkle:", error);
       addToast({

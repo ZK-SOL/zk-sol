@@ -36,20 +36,32 @@ export default function RootLayout({
   return (
     <WalletContext>
       <html suppressHydrationWarning lang="en">
-        <head />
+        <head >
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Edu+VIC+WA+NT+Beginner:wght@400..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+            rel="stylesheet"
+          />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Cal+Sans&display=swap"
+            rel="stylesheet"
+          />
+        </head>
         <body
           className={clsx(
-            "min-h-screen bg-background font-sans antialiased overflow-x-hidden",
+            "min-h-screen h-full bg-background font-sans antialiased overflow-x-hidden",
+            "bg-[radial-gradient(ellipse_50%_60%_at_50%_20%,#ffffff_60%,#eaf6fb_85%,#e4e8f0_500%)] dark:bg-[radial-gradient(ellipse_50%_60%_at_50%_20%,#000000_60%,#000000_85%,#000000_500%)]",
             fontSans.variable,
           )}
         >
         
             <Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
-              <div className="relative flex flex-col h-screen w-full">
+              <div className="relative flex flex-col h-full w-full">
                 <div className="w-full">
                   <Navbar2 />
                 </div>
-                <main className="w-full flex-grow">
+                <main className="w-full flex-grow min-h-full">
                   {children}
                 </main>
            

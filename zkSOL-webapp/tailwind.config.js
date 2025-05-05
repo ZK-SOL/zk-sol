@@ -18,6 +18,7 @@ const config = {
         'secondary': "#bd8c13",
         // Add more custom colors as needed
       },
+      
     },
     
   

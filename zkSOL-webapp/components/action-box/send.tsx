@@ -7,7 +7,7 @@ import { Card } from "@heroui/card";
 import { WalletGuard } from "../WalletGuard";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useConnection } from "@solana/wallet-adapter-react";
-import { ComputeBudgetProgram, PublicKey, Transaction } from "@solana/web3.js";
+import { ComputeBudgetProgram, LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
 import { CryptoHelper } from "@/solita/crypto-helpers";
 import {
   buildWithdrawTransactionInstruction,
@@ -23,9 +23,10 @@ import { getMerkleNodeAccount } from "@/solita/pda/merkle_pda";
 import { run_circuit } from "@/solita/zk-helper";
 import TokenDropdown from "../token-dropdown";
 import axios from "axios";
-import { addToast } from "@heroui/react";
+import { addToast, Image, Tooltip } from "@heroui/react";
 import { NATIVE_MINT } from "@solana/spl-token";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
+import { Icon } from "@iconify/react";
 
 // Define token interface
 interface Token {
@@ -41,6 +42,21 @@ interface Token {
   price?: number;
   value?: number;
 }
+
+// Helper function to create SOL token
+const createSolToken = (balance: number): Token => ({
+  chainId: 101,
+  address: NATIVE_MINT.toString(),
+  symbol: "SOL",
+  name: "Solana",
+  decimals: 9,
+  logoURI:
+    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+  tags: ["native"],
+  balance: balance / LAMPORTS_PER_SOL,
+  price: 0,
+  value: 0,
+});
 
 const Send: React.FC = () => {
   const { publicKey, sendTransaction, signTransaction }: any = useWallet();
@@ -74,9 +90,11 @@ const Send: React.FC = () => {
       symbol: "SOL",
       name: "Solana",
       decimals: 9,
+      balance: 0,
       logoURI:
         "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
-    }
+    },
+
   ]);
 
   const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
@@ -108,12 +126,23 @@ const Send: React.FC = () => {
     }
   };
 
+  const setBalance = async () => {
+    if (!publicKey) {
+      return;
+    }
+    const solBalance = await connection.getBalance(publicKey);
+    const solToken = createSolToken(solBalance);
+    setTokens([solToken]);
+    setSendFormState((prev) => ({ ...prev, selectedToken: solToken }));
+  }
   useEffect(() => {
+    setBalance();
     if (!sendFormState.selectedToken) {
       return;
     }
 
     try {
+      console.log("sendFormState", sendFormState);
       const [merkle] = getMerkleAddress(
         depth,
         new PublicKey(sendFormState.selectedToken.address),
@@ -129,7 +158,7 @@ const Send: React.FC = () => {
     } catch (error) {
       console.error("Error in useEffect:", error);
     }
-  }, [depth, sendFormState]);
+  }, [depth, sendFormState.selectedToken?.address]);
 
   // Handle token selection
   const onTokenChange = (token: Token) => {
@@ -278,7 +307,7 @@ const Send: React.FC = () => {
               variant="bordered"
               onPress={() =>
                 window.open(
-                  `https://solscan.io/tx/${txSendHash}?cluster=${process.env.SOLANA_NETWORK}`,
+                  `https://explorer.solana.com/tx/${txSendHash}?cluster=${process.env.SOLANA_NETWORK}`,
                   "_blank",
                 )
               }
@@ -302,58 +331,71 @@ const Send: React.FC = () => {
   }
 
   return (
-    <Card className="w-full mx-auto p-4 w-[450px]">
-      <div className="space-y-4">
+    <div className="space-y-4">
+     
+
         {/* Send Amount Section */}
-        <div>
-          {/* Token Selection Card */}
-          <Card className="p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TokenDropdown
-                  tokens={tokens}
-                  selectedToken={sendFormState.selectedToken}
-                  onTokenChange={onTokenChange}
-                />
+        
+          <Card className="w-full  mx-auto py-4 px-4 shadow-none border-none w-[450px] bg-primary/15  rounded-xl">
+            <div className="">
+              {/* Token Row */}
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-3">
+                  
+                    <Image
+                      src={tokens[0].logoURI}
+                      alt={tokens[0].symbol}
+                      width={32}
+                      height={32}
+                      className="rounded-full border border-gray-700"
+                    />
+                  
+                  <span className="font-bold  text-base">
+                    {tokens[0].symbol}
+                  </span>
+                </div>
+                <span className="text-gray-400 text-lg font-medium">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="flat"
+                      size="sm"
+                      className="rounded-full py-1 text-xs text-primary-400 bg-white dark:bg-gray-800 border border-primary-400"
+
+                    >
+                      1
+                    </Button>
+                    <Button
+                      variant="flat"
+                      size="sm"
+                      className="rounded-full px-3 py-1 text-xs text-gray-400 bg-white dark:bg-gray-800 cursor-not-allowed opacity-50"
+                      disabled
+                    >
+                      5 <span className="text-primary">soon</span>
+                    </Button>
+                  </div>
+                </span>
               </div>
-              <Dropdown>
-                <DropdownTrigger>
-                  <Button
-                    variant="bordered"
-                    className="min-w-[60px]"
-                  >
-                    {sendFormState.amount}
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu aria-label="Amount selection">
-                  <DropdownItem
-                    key="1"
-                    onPress={() => setSendFormState(prev => ({ ...prev, amount: 1 }))}
-                  >
-                    1
-                  </DropdownItem>
-  
-                  <DropdownItem
-                    key="5"
-                    isDisabled
-                    className="opacity-50"
-                  >
-                    5 (soon)
-                  </DropdownItem>
-                </DropdownMenu>
-              </Dropdown>
+
+
+
+
             </div>
           </Card>
-        </div>
+    
+     
 
         {/* ZKProof Section */}
         <div>
-          <span className="text-sm text-gray-600 mb-2 block">
-            ZKProof (format: secret-nullifier-index)
+          <span className="text-sm text-gray-600 mb-2 flex items-center gap-2">
+            ZKProof <Tooltip content="Format: secret-nullifier-index">
+              <Icon icon="mdi:help-circle-outline" className="w-4 h-4" />
+            </Tooltip>
           </span>
           <Input
+            variant="flat"
+            color="primary"
             placeholder="Paste your ZKProof here"
-            className="w-full"
+            className="w-full "
             value={zkProofInput}
             onChange={(e) => handleZkProofInput(e.target.value)}
           />
@@ -368,6 +410,8 @@ const Send: React.FC = () => {
         <div>
           <span className="text-sm text-gray-600 mb-2 block">Receiver</span>
           <Input
+            variant="flat"
+            color="primary"
             placeholder="receiver address"
             className="w-full"
             value={sendFormState.receiverAddress}
@@ -404,8 +448,9 @@ const Send: React.FC = () => {
             {isLoading ? "Processing..." : "Send"}
           </Button>
         </WalletGuard>
-      </div>
-    </Card>
+
+     
+    </div>
   );
 };
 

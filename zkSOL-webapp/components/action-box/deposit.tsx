@@ -30,9 +30,12 @@ import { NATIVE_MINT } from "@solana/spl-token";
 import axios from "axios";
 import TokenDropdown, { Token } from "@/components/token-dropdown";
 import { color } from "framer-motion";
-import { addToast } from "@heroui/react";
+import { addToast, Divider } from "@heroui/react";
 import { DepositStateType } from "@/types/deposit";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
+import { Chip } from "@heroui/chip";
+import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover";
+import { Icon } from "@iconify/react";
 
 export const ChevronDownIcon = () => {
   return (
@@ -178,23 +181,23 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
     }
 
     try {
-     // Fallback to SOL only
-     const solBalance = await connection.getBalance(publicKey);
-     const solToken = createSolToken(solBalance);
-     console.log("API failed, setting only SOL token:", solToken);
-     setTokens([solToken]);
-     setDepositFormState((prev) => ({ ...prev, selectedToken: solToken }));
+      // Fallback to SOL only
+      const solBalance = await connection.getBalance(publicKey);
+      const solToken = createSolToken(solBalance);
 
-        // Set selected token if not already set
-        if (!depositFormState.selectedToken) {
-          const tokenToSelect = tokens[0];
-          console.log("Setting selected token:", tokenToSelect);
-          setDepositFormState((prev) => ({
-            ...prev,
-            selectedToken: tokenToSelect,
-          }));
-        }
-      
+      setTokens([solToken]);
+      setDepositFormState((prev) => ({ ...prev, selectedToken: solToken }));
+
+      // Set selected token if not already set
+      if (!depositFormState.selectedToken) {
+        const tokenToSelect = tokens[0];
+        console.log("Setting selected token:", tokenToSelect);
+        setDepositFormState((prev) => ({
+          ...prev,
+          selectedToken: tokenToSelect,
+        }));
+      }
+
     } catch (error) {
       console.error("Error fetching tokens:", error);
 
@@ -245,29 +248,29 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
       setState("processing...");
       // Generate random values only if they haven't been generated yet
 
-        randomValuesRef.current.secret = Math.floor(Math.random() * 1000) + 1;
-        randomValuesRef.current.nullifier = Math.floor(Math.random() * 1000) + 1;
-        console.log("Generated new random values:", randomValuesRef.current);
- 
+      randomValuesRef.current.secret = Math.floor(Math.random() * 1000) + 1;
+      randomValuesRef.current.nullifier = Math.floor(Math.random() * 1000) + 1;
+      console.log("Generated new random values:", randomValuesRef.current);
+
       const randomSecret = randomValuesRef.current.secret;
       const randomNullifier = randomValuesRef.current.nullifier;
 
       // Update the state with the random values
       setDepositFormState(prev => {
-  
+
         const newState = {
           ...prev,
           secret: randomSecret,
           nullifier: randomNullifier
         };
-       
+
         return newState;
       });
-      
+
       // Use the random values directly
       const nullifier = randomNullifier;
       const secret = randomSecret;
-      
+
       console.log("Using direct values:", { nullifier, secret });
 
       if (!publicKey) {
@@ -321,7 +324,7 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
       const txDepositHash = await sendTransaction(tx, connection, {
         skipPreflight: true,
       });
-  
+
 
       addToast({
         title: "Deposit successful",
@@ -329,12 +332,12 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
         endContent: (
           <div className="ms-11 my-2 flex gap-x-2">
             <Button
-              
+
               size="sm"
               variant="bordered"
               onPress={() =>
                 window.open(
-                  `https://solscan.io/tx/${txDepositHash}?cluster=${process.env.SOLANA_NETWORK}`,
+                  `https://explorer.solana.com/tx/${txDepositHash}?cluster=${process.env.SOLANA_NETWORK}`,
                   "_blank",
                 )
               }
@@ -345,12 +348,12 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
         ),
       });
       setState("generating proof");
-       // await confirmation
-       const status = await connection.confirmTransaction({
+      // await confirmation
+      const status = await connection.confirmTransaction({
         signature: txDepositHash,
         ...(await connection.getLatestBlockhash()),
       });
-  
+
       setIsLoading(false);
       setState("deposit");
       // Set proof data and show proof section
@@ -373,121 +376,139 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
           proofData: newProofData,
         });
       }
-      
+
     } catch (error: any) {
       console.error("deposit_merkle", error);
       addToast({
         title: "Deposit failed",
         color: "danger",
         description: error.message,
-      
+
       });
       setIsLoading(false);
     }
   }
 
   return (
-    <>
-      <Card className="w-full mx-auto p-4 w-[450px]">
-        <div className="space-y-4">
-          {/* Send Amount Section */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs text-gray-400">
-                Balance: {depositFormState.selectedToken?.balance}{" "}
-                {depositFormState.selectedToken?.symbol}
+    <div className="space-y-4">
+      <Card className="w-full  mx-auto py-4 px-4 shadow-none border-none w-[450px] bg-primary/20  rounded-xl">
+        <div className="">
+          {/* Token Row */}
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-3">
+              
+                <Image
+                  src={tokens[0]?.logoURI}
+                  alt={tokens[0]?.symbol}
+                  width={32}
+                  height={32}
+                  className="rounded-full border border-gray-700"
+                />
+              
+              <span className="font-bold  text-base">
+                {tokens[0]?.symbol}
               </span>
-              {/* <div className="flex items-center gap-2">
-                <Button
-                  variant="flat"
-                  size="sm"
-                  onPress={() =>
-                    setDepositFormState((prev) => ({
-                      ...prev,
-                      amount: parseFloat(handleTokenButtonClick("half")),
-                    }))
-                  }
-                >
-                  HALF
-                </Button>
-                <Button
-                  variant="flat"
-                  size="sm"
-                  onPress={() =>
-                    setDepositFormState((prev) => ({
-                      ...prev,
-                      amount: parseFloat(handleTokenButtonClick("max")),
-                    }))
-                  }
-                >
-                  MAX
-                </Button>
-              </div> */}
             </div>
+            <span className="text-gray-400 text-lg font-medium">
+              <div className="flex gap-2">
+                <Button
+                  variant="flat"
+                  size="sm"
+                  className="rounded-full py-1 text-xs text-primary-400 bg-white dark:bg-gray-800 border border-primary-400"
 
-            {/* Token Selection Card */}
-            <Card className="p-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TokenDropdown
-                    tokens={tokens}
-                    selectedToken={depositFormState.selectedToken}
-                    onTokenChange={onTokenChange}
-                  />
-                </div>
-                <Dropdown>
-                  <DropdownTrigger>
-                    <Button
-                      variant="bordered"
-                      className="min-w-[60px]"
-                    >
-                      {depositFormState.amount}
-                    </Button>
-                  </DropdownTrigger>
-                  <DropdownMenu aria-label="Amount selection">
-                    <DropdownItem
-                      key="1"
-                      onPress={() => setDepositFormState(prev => ({ ...prev, amount: 1 }))}
-                    >
-                      1
-                    </DropdownItem>
-                    <DropdownItem
-                      key="5"
-                      isDisabled
-                      className="opacity-50"
-                    >
-                      5 (soon)
-                    </DropdownItem>
-                  </DropdownMenu>
-                </Dropdown>
+                >
+                  1
+                </Button>
+                <Button
+                  variant="flat"
+                  size="sm"
+                  className="rounded-full px-3 py-1 text-xs text-gray-400 bg-white dark:bg-gray-800 cursor-not-allowed opacity-50"
+                  disabled
+                >
+                  5 <span className="text-primary">soon</span>
+                </Button>
               </div>
-            </Card>
-          </div>
-
-          {/* Protocol Information */}
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            Deposit {depositFormState.selectedToken?.symbol} to your private
-            vault
+            </span>
           </div>
 
 
-          {/* Send Button */}
-          <div className="w-full">
-            <WalletGuard>
-              <Button
-                color="primary"
-                className="w-full  my-2 text-white capitalize"
-                size="lg"
-                onPress={() => deposit_merkle()}
-                isLoading={isLoading}
-                disabled={isLoading}
-              >
-                {state}
-              </Button>
-            </WalletGuard>
-          </div>
+
+
         </div>
       </Card>
+      {/* Balance Row */}
+
+      <span className="text-xs text-gray-500">
+        Balance: {tokens[0]?.balance?.toFixed(2)} {tokens[0]?.symbol}
+      </span>
+
+     
+    
+      {/* Send Button */}
+      <div className="w-full">
+        <WalletGuard>
+          <Button
+            color="primary"
+            className="w-full  my-2 text-white capitalize border-fill "
+            size="lg"
+            onPress={() => deposit_merkle()}
+            isLoading={isLoading}
+            disabled={isLoading}
+          >
+            {state}
+          </Button>
+        </WalletGuard>
+         {/* How it works button */}
+      <div className="w-full flex justify-start">
+        <Popover placement="bottom">
+          <PopoverTrigger>
+            <Button
+            size="sm"
+              variant="light"
+              className="text-gray-500 hover:text-primary"
+              endContent={<Icon icon="mdi:help-circle-outline" className="w-4 h-4" />}
+            >
+              How it works
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[500px] p-4">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-primary font-bold">1</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 dark:text-white">Deposit SOL into your private pool</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Deposit 1 SOL into a private pool. Each pool is single-use and stores exactly 1 SOL for maximum privacy.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-primary font-bold">2</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 dark:text-white">Get your custom secret seed</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Receive a unique secret seed that acts as your private key. This seed is required to access your funds.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-primary font-bold">3</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 dark:text-white">Send SOL confidentially</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Use your secret seed from any wallet to send SOL to any address. Our protocol handles the transfer privately and securely.</p>
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+      </div>
+
+     
 
       {/* ZKProof Section - Only shown after successful deposit */}
       {showProof && proofData && (
@@ -527,7 +548,7 @@ const Deposit: React.FC<DepositProps> = ({ depositState: parentDepositState, set
           </div>
         </Card>
       )}
-    </>
+    </div>
   );
 };
 

@@ -10,19 +10,8 @@ import {
   NavbarMenuItem,
   NavbarMenuToggle,
   Link,
-  Button,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Avatar,
-  Badge,
-  Chip,
+  Tooltip,
 } from "@heroui/react";
-import { Icon } from "@iconify/react";
 import { usePathname } from "next/navigation";
 import dynamic from 'next/dynamic';
 import ClientOnly from './ClientOnly';
@@ -30,10 +19,9 @@ import ClientOnly from './ClientOnly';
 // import {AcmeIcon} from "./acme";
 
 
-import { AcmeIcon } from "./logo";
-import WalletContext from "@/context/wallet-context";
 import { ThemeSwitch } from "./theme-switch";
-import Image from "next/image";
+import {Logo}  from "./logo";
+import { Icon } from "@iconify/react";
 
 // Optionally, you can also dynamically import the WalletMultiButton
 const WalletMultiButton = dynamic(
@@ -74,11 +62,8 @@ export default function Component() {
         >
           <NavbarMenuToggle className="text-default-400 md:hidden" />
 
-          <NavbarBrand>
-            <div className="rounded-full bg-foreground text-background">
-              <Image src="/logo.jpeg" className="rounded-full grayscale" alt="Zask Logo" width={34} height={34} />
-            </div>
-            <span className="ml-2 font-medium">Zask</span>
+          <NavbarBrand className="flex items-center gap-2">
+            <Logo />
           </NavbarBrand>
           {/* <NavbarContent
             className="hidden h-11 gap-4 rounded-full border-small border-default-200/20 bg-background/60 px-4 shadow-medium backdrop-blur-md backdrop-saturate-150 dark:bg-default-100/50 md:flex"
@@ -101,6 +86,13 @@ export default function Component() {
 
           </NavbarContent> */}
           <NavbarContent justify="end">
+            <NavbarItem className="ml-2 !flex gap-2 flex items-center gap-1 text-xs font-light ">
+          
+        DEVNET<Tooltip content="Program address: 4BEBe7TVDef5Nfdft252mMCSNBBmPLQ2gVXmKvJvSbP1">
+        <Icon icon="mdi:information-outline" className="text-primary-color" />
+      </Tooltip>
+      
+      </NavbarItem>
             <NavbarItem className="ml-2 !flex gap-2">
               <ThemeSwitch />
             </NavbarItem>
@@ -108,6 +100,7 @@ export default function Component() {
               <ClientOnly>
                 <WalletMultiButton/>
               </ClientOnly>
+              
             </NavbarItem>
           </NavbarContent>
           <NavbarMenu

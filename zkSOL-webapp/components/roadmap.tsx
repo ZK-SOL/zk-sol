@@ -19,7 +19,7 @@ const roadmapData: RoadmapItem[] = [
   },
   {
     date: "Q2 2025",
-    title: "Zask Protocol Launch",
+    title: "P2P confidential transfer",
     description: "Launch of the core Zask protocol, send and receive tokens with complete anonymity",
     completed: true,
     icon: "shield-check"
